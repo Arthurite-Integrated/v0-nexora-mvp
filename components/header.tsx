@@ -11,9 +11,9 @@ export function Header() {
             <Image
               src="/images/nexora-logo.png"
               alt="Nexora - Together in Care"
-              width={200}
-              height={50}
-              className="h-12 w-auto"
+              width={1000}
+              height={1000}
+              className="h-36 w-auto"
             />
           </Link>
 

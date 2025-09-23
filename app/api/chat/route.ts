@@ -1,26 +1,66 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { GoogleGenAI } from '@google/genai';
 
-// This would integrate with Google's Gemini API
-// For now, we'll return a placeholder response
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
 export async function POST(request: NextRequest) {
   try {
-    const { message, context } = await request.json()
+    const { message, context, conversationHistory = [] } = await request.json()
 
-    // In production, you would:
-    // 1. Import the Gemini SDK
-    // 2. Initialize the client with your API key
-    // 3. Send the message with IDD care context
-    // 4. Return the AI response
+    // Build the conversation contents with full history
+    const conversationContents = [
+      // System message with context
+      {
+        role: "user",
+        parts: [{
+          text: `You are Nexora Assistant, a helpful AI specialized in intellectual and developmental disabilities (IDD) care and support. You provide compassionate, evidence-based guidance to families, caregivers, and individuals with IDD.
 
-    // Placeholder implementation
-    const response = {
-      response:
-        "I understand you're asking about IDD care. While I'm currently in development mode, I recommend consulting with our verified healthcare professionals for personalized guidance. You can browse our professional directory or schedule a consultation through our platform.",
-    }
+Context: ${context}
 
-    return NextResponse.json(response)
+Guidelines:
+- Always respond with empathy and understanding
+- Provide practical, actionable advice when possible
+- Acknowledge when professional consultation is recommended
+- Maintain a warm, supportive tone throughout the conversation
+- Remember the conversation history and build upon previous exchanges
+- IMPORTANT: Respond ONLY with plain text, remove ALL markdown formatting
+
+Please continue the conversation naturally, referencing previous messages when relevant.`
+        }]
+      }
+    ];
+
+    // Add conversation history
+    conversationHistory.forEach((msg: any) => {
+      conversationContents.push({
+        role: msg.role === "user" ? "user" : "model",
+        parts: [{ text: msg.content }]
+      });
+    });
+
+    // Add current user message
+    conversationContents.push({
+      role: "user",
+      parts: [{ text: message }]
+    });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: conversationContents,
+    });
+
+    const textResponse = response.candidates?.[0]?.content?.parts?.[0]?.text || 
+      "I'm sorry, I couldn't generate a response. Please try again or contact our support team for assistance.";
+
+    return NextResponse.json({
+      reply: textResponse,
+    });
+
   } catch (error) {
-    console.error("Chat API error:", error)
-    return NextResponse.json({ error: "Failed to process chat request" }, { status: 500 })
+    console.error("Chat API error:", error);
+    return NextResponse.json({ 
+      error: "Failed to process chat request" 
+    }, { status: 500 });
   }
 }

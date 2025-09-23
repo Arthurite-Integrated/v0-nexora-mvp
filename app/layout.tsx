@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import { Crimson_Text } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
+import FloatingChatbot from "@/components/floatingChatbot"
 import "./globals.css"
 
 const inter = Inter({
@@ -35,6 +36,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans ${inter.variable} ${crimsonText.variable}`}>
         <Suspense fallback={null}>{children}</Suspense>
+        <FloatingChatbot />
         <Analytics />
       </body>
     </html>

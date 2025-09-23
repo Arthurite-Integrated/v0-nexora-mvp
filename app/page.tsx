@@ -97,28 +97,28 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
-                name: "Dr. Sarah Johnson",
-                specialization: "Developmental Pediatrics",
+                name: "Prof. Folakemi Oredugba",
+                specialization: "Developmental Pediatric Dentistry",
                 location: "Lagos, Nigeria",
                 rating: 4.9,
                 reviews: 127,
-                image: "/professional-doctor-woman.jpg",
+                image: "/images/prof-oredugba.jpeg",
               },
               {
-                name: "Dr. Michael Adebayo",
-                specialization: "Speech Therapy",
-                location: "Abuja, Nigeria",
+                name: "Dr. Ronke Oluwo",
+                specialization: "Pediatric Dentistry",
+                location: "Lagos, Nigeria",
                 rating: 4.8,
                 reviews: 89,
-                image: "/professional-doctor-man.jpg",
+                image: "/images/dr-oluwo.png",
               },
               {
-                name: "Dr. Fatima Hassan",
-                specialization: "Occupational Therapy",
-                location: "Port Harcourt, Nigeria",
-                rating: 5.0,
+                name: "Dr. Alero Roberts",
+                specialization: "Community Medicine",
+                location: "Lagos, Nigeria",
+                rating: 4.8,
                 reviews: 156,
-                image: "/professional-therapist-woman.png",
+                image: "/images/dr-roberts.png",
               },
             ].map((professional, index) => (
               <Card key={index} className="hover:shadow-lg transition-shadow">
@@ -155,7 +155,7 @@ export default function HomePage() {
 
           <div className="text-center mt-8">
             <Button variant="outline" size="lg" asChild>
-              <Link href="/professionals">View All Professionals</Link>
+              <Link href="/">View All Professionals</Link>
             </Button>
           </div>
         </div>

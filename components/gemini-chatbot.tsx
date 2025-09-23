@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Send, Bot, User, Loader2, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
+const { markdownToTxt } = require('markdown-to-txt');
 
 interface Message {
   id: string
@@ -79,12 +80,17 @@ export default function GeminiChatbot() {
       }
 
       const data = await response.json()
+      const unCleanedText = markdownToTxt(data.reply || "")
+      // const dataWithNoMarkdown = unCleanedText.replace(/[\r\n]+/g, ' ').trim();
+      const finalData = markdownToTxt(unCleanedText)
+ 
+      console.log("Gemini response data:", data)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content:
-          data.response ||
+          finalData ||
           "I apologize, but I'm having trouble processing your request right now. Please try again or contact our support team for assistance.",
         timestamp: new Date(),
       }
