@@ -1,9 +1,14 @@
+"use client"
+
+import { useState } from "react"
 import { Header } from "@/components/header"
 import { ProfessionalCard } from "@/components/professional-card"
 import { ProfessionalFilters } from "@/components/professional-filters"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, MapPin, Filter } from "lucide-react"
+import { Search, MapPin, Filter, Loader2, CheckCircle } from "lucide-react"
+import Image from "next/image"
+import Logo from "@/public/images/nexora-logo.png"
 
 // Mock data - in real app this would come from Supabase
 const mockProfessionals = [
@@ -94,10 +99,55 @@ const mockProfessionals = [
 ]
 
 export default function ProfessionalsPage() {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+  const [email, setEmail] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
+  const [message, setMessage] = useState("")
 
+  const handleNotifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!email || !email.includes("@")) {
+      setSubmitStatus("error")
+      setMessage("Please enter a valid email address")
+      return
+    }
+
+    setIsSubmitting(true)
+    setSubmitStatus("idle")
+
+    try {
+      const response = await fetch("/api/notify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSubmitStatus("success")
+        setMessage(data.message || "Thank you! You'll be notified when we launch.")
+        setEmail("")
+      } else {
+        setSubmitStatus("error")
+        setMessage(data.error || "Something went wrong. Please try again.")
+      }
+    } catch (error) {
+      console.error("Signup error:", error)
+      setSubmitStatus("error")
+      setMessage("Network error. Please check your connection and try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Remove Header from here since it's now in layout */}
+      
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -167,6 +217,61 @@ export default function ProfessionalsPage() {
                 <Button variant="outline">Next</Button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Coming Soon Overlay */}
+      <div className="fixed top-0 left-0 right-0 bottom-0 bg-white bg-opacity-90 backdrop-blur-md z-30 flex items-center justify-center">
+        <div className="text-center text-gray-900 px-6 max-w-lg">
+          {/* Logo Container */}
+          <div className="mb-8">
+            <Image src={Logo} alt="Nexora Care" className="w-64 h-64 mx-auto mb-4" />
+          </div>
+          
+          {/* Coming Soon Text */}
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">Coming Soon</h2>
+          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-md mx-auto">
+            We're building an amazing directory of healthcare professionals for IDD care.
+          </p>
+          
+          {/* Email Notification Signup */}
+          <div className="max-w-sm mx-auto">
+            <p className="text-sm text-gray-500 mb-4">Get notified when we launch</p>
+            
+            {submitStatus === "success" ? (
+              <div className="flex items-center justify-center gap-2 text-green-600 bg-green-50 p-4 rounded-lg">
+                <CheckCircle className="h-5 w-5" />
+                <span className="text-sm font-medium">{message}</span>
+              </div>
+            ) : (
+              <form onSubmit={handleNotifySubmit} className="space-y-3">
+                <div className="flex gap-2">
+                  <Input 
+                    type="email" 
+                    placeholder="Enter your email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-white/60 border-gray-300 text-gray-900 placeholder:text-gray-500"
+                    disabled={isSubmitting}
+                  />
+                  <Button 
+                    type="submit"
+                    disabled={isSubmitting || !email}
+                    className="bg-teal-600 hover:bg-teal-700 text-white"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Notify Me"
+                    )}
+                  </Button>
+                </div>
+                {submitStatus === "error" && (
+                  <p className="text-red-600 text-sm">{message}</p>
+                )}
+              </form>
+            )}
           </div>
         </div>
       </div>

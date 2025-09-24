@@ -3,12 +3,10 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { BookOpen, Users, Stethoscope, Calendar } from "lucide-react"
 import Link from "next/link"
-import { Header } from "@/components/header"
 
 export default function ResourcesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-teal-600 to-teal-700 text-white py-16">

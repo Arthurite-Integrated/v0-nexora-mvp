@@ -1,4 +1,3 @@
-import { Header } from "@/components/header"
 import { CaregiverDashboard } from "@/components/caregiver-dashboard"
 import { ProfessionalDashboard } from "@/components/professional-dashboard"
 import { AdminDashboard } from "@/components/admin-dashboard"
@@ -20,7 +19,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {mockUser.role === "caregiver" && <CaregiverDashboard user={mockUser} />}

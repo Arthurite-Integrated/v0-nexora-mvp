@@ -1,4 +1,4 @@
-import { Header } from "@/components/header"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,7 +8,6 @@ import { Heart, Users, Shield, Calendar, Star, MapPin } from "lucide-react"
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <Header />
 
       {/* Hero Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">

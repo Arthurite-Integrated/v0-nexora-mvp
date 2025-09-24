@@ -1,4 +1,3 @@
-import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -86,7 +85,6 @@ export default function ProfessionalProfilePage({ params }: ProfessionalProfileP
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-3 gap-8">

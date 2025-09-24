@@ -1,4 +1,3 @@
-import { Header } from "@/components/header"
 import { BookingCard } from "@/components/booking-card"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -68,7 +67,6 @@ export default function BookingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-4xl mx-auto">
