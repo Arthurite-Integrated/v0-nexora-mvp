@@ -1,11 +1,15 @@
+"use client"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Heart, Users, Shield, Calendar, Star, MapPin } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function HomePage() {
+  const { user } = useAuth()
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
 
@@ -22,12 +26,20 @@ export default function HomePage() {
               consultations, access resources, and join a supportive community.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild className="bg-primary hover:bg-primary/90">
-                <Link href="/register?role=caregiver">Find a Professional</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/register?role=professional">Join as Professional</Link>
-              </Button>
+              {user ? (
+                <Button size="lg" asChild className="bg-primary hover:bg-primary/90">
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                </Button>
+              ) : (
+                <>
+                  <Button size="lg" asChild className="bg-primary hover:bg-primary/90">
+                    <Link href="/register?role=caregiver">Find a Professional</Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link href="/register?role=professional">Join as Professional</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -165,23 +177,37 @@ export default function HomePage() {
         <div className="container mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <Heart className="w-16 h-16 mx-auto mb-6 text-white/80" />
-            <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-            <p className="text-xl text-primary-foreground/80 mb-8">
-              Join thousands of families who have found the right care for their loved ones through Nexora.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" asChild>
-                <Link href="/register?role=caregiver">Find Care Today</Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white hover:text-primary bg-transparent"
-                asChild
-              >
-                <Link href="/register?role=professional">Become a Provider</Link>
-              </Button>
-            </div>
+            {user ? (
+              <>
+                <h2 className="text-3xl font-bold mb-4">Welcome back!</h2>
+                <p className="text-xl text-primary-foreground/80 mb-8">
+                  Continue your journey with Nexora. Access your dashboard to manage appointments and connect with professionals.
+                </p>
+                <Button size="lg" variant="secondary" asChild>
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+                <p className="text-xl text-primary-foreground/80 mb-8">
+                  Join thousands of families who have found the right care for their loved ones through Nexora.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button size="lg" variant="secondary" asChild>
+                    <Link href="/register?role=caregiver">Find Care Today</Link>
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-white text-white hover:bg-white hover:text-primary bg-transparent"
+                    asChild
+                  >
+                    <Link href="/register?role=professional">Become a Provider</Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>

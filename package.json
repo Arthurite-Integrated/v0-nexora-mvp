@@ -42,6 +42,7 @@
     "@sanity/client": "^6.21.3",
     "@sanity/image-url": "latest",
     "@sanity/vision": "latest",
+    "@supabase/supabase-js": "^2.86.0",
     "@vercel/analytics": "latest",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",

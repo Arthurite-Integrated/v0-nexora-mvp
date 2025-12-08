@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import FloatingChatbot from "@/components/floatingChatbot"
 import { Header } from "@/components/header"
+import { AuthProvider } from "@/contexts/AuthContext"
 import "./globals.css"
 
 const inter = Inter({
@@ -36,11 +37,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${inter.variable} ${crimsonText.variable}`}>
-        <Header />
-        <main>
-          <Suspense fallback={null}>{children}</Suspense>
-        </main>
-        <FloatingChatbot />
+        <AuthProvider>
+          <Header />
+          <main>
+            <Suspense fallback={null}>{children}</Suspense>
+          </main>
+          <FloatingChatbot />
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, Plus, Star, MessageCircle, BookOpen } from "lucide-react"
 import Link from "next/link"
+import { AlertCircle } from "lucide-react"
 
 interface CaregiverDashboardProps {
   user: {
@@ -96,6 +97,21 @@ const mockData = {
 export function CaregiverDashboard({ user }: CaregiverDashboardProps) {
   return (
     <div className="space-y-8">
+      {/* Demo Notice Banner */}
+      <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <AlertCircle className="w-6 h-6 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-amber-900 mb-1">Demo Dashboard</h3>
+            <p className="text-sm text-amber-800">
+              This dashboard displays placeholder data for demonstration purposes. In the full version, you'll see your actual appointments, messages, and activity.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg p-6">
         <h1 className="text-3xl font-bold mb-2">Welcome back, {user.name}!</h1>

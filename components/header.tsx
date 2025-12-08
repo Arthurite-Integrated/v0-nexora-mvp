@@ -4,13 +4,20 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X } from "lucide-react"
+import { Menu, X, User, LogOut } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { user, signOut } = useAuth()
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+    window.location.href = '/'
   }
 
   return (
@@ -45,12 +52,29 @@ export function Header() {
 
           {/* Desktop Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" asChild>
-              <Link href="/login">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/register">Get Started</Link>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/dashboard">
+                    <User className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Link>
+                </Button>
+                <Button variant="ghost" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/login">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/register">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -97,16 +121,33 @@ export function Header() {
               </Link>
               <div className="border-t pt-4 mt-4">
                 <div className="space-y-2">
-                  <Button variant="ghost" className="w-full justify-start" asChild>
-                    <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                      Sign In
-                    </Link>
-                  </Button>
-                  <Button className="w-full" asChild>
-                    <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                      Get Started
-                    </Link>
-                  </Button>
+                  {user ? (
+                    <>
+                      <Button variant="ghost" className="w-full justify-start" asChild>
+                        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                          <User className="h-4 w-4 mr-2" />
+                          Dashboard
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start" onClick={() => { handleSignOut(); setIsMobileMenuOpen(false); }}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="ghost" className="w-full justify-start" asChild>
+                        <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                          Sign In
+                        </Link>
+                      </Button>
+                      <Button className="w-full" asChild>
+                        <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                          Get Started
+                        </Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
