@@ -271,6 +271,19 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4">
+              <Link href="/privacy" className="hover:text-white transition-colors">
+                Privacy Policy
+              </Link>
+              <span className="hidden sm:inline">•</span>
+              <Link href="/terms" className="hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+              <span className="hidden sm:inline">•</span>
+              <Link href="/about" className="hover:text-white transition-colors">
+                About Us
+              </Link>
+            </div>
             <p>&copy; 2024 Nexora. All rights reserved. Together in Care.</p>
           </div>
         </div>
