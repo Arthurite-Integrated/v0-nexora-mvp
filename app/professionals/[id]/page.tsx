@@ -1,145 +1,150 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
-import { Star, MapPin, Clock, CheckCircle, Languages, Calendar, Award, Users } from "lucide-react"
+import { Star, MapPin, Clock, CheckCircle, Languages, Calendar, Award, Users, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { BackButton } from "@/components/back-button"
+import { ProfessionalSchema } from "@/components/structured-data"
 
-// Mock data - in real app this would come from Supabase
-const mockProfessional = {
-  id: "1",
-  name: "Dr. Sarah Johnson",
-  specialization: "Developmental Pediatrics",
-  location: "Lagos, Nigeria",
-  bio: "Dr. Sarah Johnson is a board-certified developmental pediatrician with over 15 years of experience working with children and families affected by Intellectual and Developmental Disabilities. She specializes in early intervention, developmental assessments, and creating comprehensive care plans that support both the individual and their family.",
-  rating: 4.9,
-  reviewCount: 127,
-  verified: true,
-  yearsExperience: 15,
-  consultationFee: 25000,
-  languages: ["English", "Yoruba"],
-  image: "/professional-doctor-woman.jpg",
-  credentials: [
-    "MD, University of Lagos",
-    "Residency in Pediatrics, Lagos University Teaching Hospital",
-    "Fellowship in Developmental Pediatrics, Great Ormond Street Hospital, London",
-    "Board Certified in Developmental-Behavioral Pediatrics",
-  ],
-  specialties: [
-    "Autism Spectrum Disorders",
-    "ADHD and Learning Disabilities",
-    "Cerebral Palsy",
-    "Down Syndrome",
-    "Early Intervention",
-    "Developmental Assessments",
-  ],
-  availability: [
-    { day: "Monday", times: ["9:00 AM - 12:00 PM", "2:00 PM - 5:00 PM"] },
-    { day: "Tuesday", times: ["9:00 AM - 12:00 PM", "2:00 PM - 5:00 PM"] },
-    { day: "Wednesday", times: ["9:00 AM - 12:00 PM"] },
-    { day: "Thursday", times: ["9:00 AM - 12:00 PM", "2:00 PM - 5:00 PM"] },
-    { day: "Friday", times: ["9:00 AM - 12:00 PM"] },
-  ],
-  reviews: [
-    {
-      id: "1",
-      caregiverName: "Adunni M.",
-      rating: 5,
-      comment:
-        "Dr. Johnson was incredibly patient and thorough with my son's assessment. She took the time to explain everything and provided excellent resources for our family.",
-      date: "2024-01-15",
-    },
-    {
-      id: "2",
-      caregiverName: "Kemi O.",
-      rating: 5,
-      comment:
-        "Outstanding professional. Her expertise in autism spectrum disorders is evident, and she made both my daughter and our family feel comfortable throughout the process.",
-      date: "2024-01-10",
-    },
-    {
-      id: "3",
-      caregiverName: "Tunde A.",
-      rating: 4,
-      comment:
-        "Very knowledgeable and caring. The consultation was comprehensive and she provided practical strategies we could implement immediately.",
-      date: "2024-01-05",
-    },
-  ],
+interface Review {
+  _id: string
+  rating: number
+  comment: string
+  createdAt: string
+  caregiverId?: { name: string; profileImage?: string }
 }
 
-interface ProfessionalProfilePageProps {
-  params: {
-    id: string
-  }
+interface Professional {
+  _id: string
+  name: string
+  specialization: string
+  location: string
+  bio: string
+  averageRating: number
+  reviewCount: number
+  isVerified: boolean
+  experience: number
+  consultationFee: number
+  languages: string[]
+  profileImage?: string
+  credentials: string[]
+  availability: { day: string; startTime: string; endTime: string }[]
 }
 
-export default function ProfessionalProfilePage({ params }: ProfessionalProfilePageProps) {
-  // In real app, fetch professional data based on params.id
-  if (params.id !== "1") {
-    notFound()
+export default function ProfessionalProfilePage() {
+  const { id } = useParams<{ id: string }>()
+  const router = useRouter()
+  const [professional, setProfessional] = useState<Professional | null>(null)
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/professionals/${id}`)
+      .then(r => {
+        if (!r.ok) { setNotFound(true); return null }
+        return r.json()
+      })
+      .then(d => {
+        if (d) {
+          setProfessional(d.professional)
+          setReviews(d.reviews || [])
+        }
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setIsLoading(false))
+  }, [id])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Skeleton className="h-4 w-24 mb-6" />
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              <Skeleton className="h-48 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-48 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  const professional = mockProfessional
+  if (notFound || !professional) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="font-medium text-foreground mb-2">Professional not found</p>
+          <Button variant="outline" onClick={() => router.push("/professionals")}>Browse Professionals</Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
+    <div className="min-h-screen bg-background">
+      <ProfessionalSchema
+        name={professional.name}
+        specialization={professional.specialization}
+        location={professional.location}
+        bio={professional.bio}
+        profileUrl={`https://nexoracare.com/professionals/${professional._id}`}
+        imageUrl={professional.profileImage}
+        rating={professional.averageRating}
+        reviewCount={professional.reviewCount}
+        consultationFee={professional.consultationFee}
+      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <BackButton fallback="/professionals" label="Find Professionals" className="mb-6" />
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
+
+          {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Professional Header */}
+
+            {/* Header card */}
             <Card>
               <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row gap-6">
-                  <div className="w-32 h-32 rounded-lg overflow-hidden flex-shrink-0">
-                    <img
-                      src={professional.image || "/placeholder.svg"}
-                      alt={professional.name}
-                      className="w-full h-full object-cover"
-                    />
+                <div className="flex flex-col sm:flex-row gap-5">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg overflow-hidden shrink-0 bg-muted">
+                    <img src={professional.profileImage || "/placeholder.svg"} alt={professional.name} className="w-full h-full object-cover" />
                   </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <h1 className="text-3xl font-bold text-gray-900">{professional.name}</h1>
-                          {professional.verified && <CheckCircle className="w-6 h-6 text-primary" />}
-                        </div>
-                        <Badge variant="secondary" className="text-base px-3 py-1">
-                          {professional.specialization}
-                        </Badge>
-                      </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2 mb-2">
+                      <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{professional.name}</h1>
+                      {professional.isVerified && <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-1" />}
                     </div>
-
-                    <div className="flex flex-wrap gap-6 text-gray-600 mb-4">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-5 h-5" />
-                        {professional.location}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-5 h-5" />
-                        {professional.yearsExperience} years experience
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Languages className="w-5 h-5" />
-                        {professional.languages.join(", ")}
-                      </div>
+                    <Badge variant="secondary" className="mb-3">{professional.specialization}</Badge>
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
+                      {professional.location && (
+                        <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4" />{professional.location}</span>
+                      )}
+                      <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />{professional.experience} yrs experience</span>
+                      {professional.languages?.length > 0 && (
+                        <span className="flex items-center gap-1.5"><Languages className="w-4 h-4" />{professional.languages.join(", ")}</span>
+                      )}
                     </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                        <span className="font-semibold text-lg">{professional.rating}</span>
-                        <span className="text-gray-500">({professional.reviewCount} reviews)</span>
-                      </div>
-                      {professional.verified && (
-                        <Badge variant="outline" className="border-primary text-primary">
-                          Verified Professional
-                        </Badge>
+                    <div className="flex items-center gap-3">
+                      {professional.reviewCount > 0 && (
+                        <span className="flex items-center gap-1 text-sm">
+                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                          <span className="font-semibold">{professional.averageRating.toFixed(1)}</span>
+                          <span className="text-muted-foreground">({professional.reviewCount} reviews)</span>
+                        </span>
+                      )}
+                      {professional.isVerified && (
+                        <Badge variant="outline" className="border-primary text-primary text-xs">Verified</Badge>
                       )}
                     </div>
                   </div>
@@ -147,133 +152,115 @@ export default function ProfessionalProfilePage({ params }: ProfessionalProfileP
               </CardContent>
             </Card>
 
-            {/* About */}
-            <Card>
-              <CardHeader>
-                <CardTitle>About Dr. {professional.name.split(" ").pop()}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 leading-relaxed">{professional.bio}</p>
-              </CardContent>
-            </Card>
+            {/* Bio */}
+            {professional.bio && (
+              <Card>
+                <CardHeader><CardTitle>About</CardTitle></CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground leading-relaxed">{professional.bio}</p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Credentials */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5" />
-                  Credentials & Education
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {professional.credentials.map((credential, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                      <span className="text-gray-700">{credential}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-
-            {/* Specialties */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Areas of Expertise</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {professional.specialties.map((specialty, index) => (
-                    <Badge key={index} variant="outline">
-                      {specialty}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {professional.credentials?.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Award className="w-5 h-5" />Credentials</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {professional.credentials.map((c, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span className="text-muted-foreground">{c}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Reviews */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Patient Reviews ({professional.reviewCount})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {professional.reviews.map((review, index) => (
-                  <div key={review.id}>
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-primary font-semibold">{review.caregiverName.charAt(0)}</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">{review.caregiverName}</span>
-                          <div className="flex items-center">
-                            {[...Array(review.rating)].map((_, i) => (
-                              <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                            ))}
-                          </div>
-                          <span className="text-gray-500 text-sm">{review.date}</span>
+            {reviews.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />Reviews ({professional.reviewCount})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {reviews.map((review, i) => (
+                    <div key={review._id}>
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                          <span className="text-primary font-semibold text-sm">
+                            {(review.caregiverId?.name || "A")[0].toUpperCase()}
+                          </span>
                         </div>
-                        <p className="text-gray-700">{review.comment}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">{review.caregiverId?.name || "Anonymous"}</span>
+                            <div className="flex">
+                              {[...Array(review.rating)].map((_, j) => (
+                                <Star key={j} className="w-3.5 h-3.5 text-yellow-400 fill-current" />
+                              ))}
+                            </div>
+                            <span className="text-muted-foreground text-xs">
+                              {new Date(review.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{review.comment}</p>
+                        </div>
                       </div>
+                      {i < reviews.length - 1 && <Separator className="mt-4" />}
                     </div>
-                    {index < professional.reviews.length - 1 && <Separator className="mt-4" />}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {reviews.length === 0 && (
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground text-sm">
+                  No reviews yet for this professional.
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Booking Card */}
-            <Card className="sticky top-4">
+            <Card className="lg:sticky lg:top-4">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Book Consultation
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Calendar className="w-4 h-4" />Book Consultation
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-primary">
-                    ₦{professional.consultationFee.toLocaleString()}
-                  </div>
-                  <div className="text-gray-500">per consultation</div>
+                <div className="text-center py-2">
+                  <div className="text-3xl font-bold text-primary">₦{professional.consultationFee.toLocaleString()}</div>
+                  <p className="text-sm text-muted-foreground mt-1">per 60-min session</p>
                 </div>
-
-                <Button size="lg" className="w-full" asChild>
-                  <Link href={`/book/${professional.id}`}>Book Appointment</Link>
-                </Button>
-
-                <Button variant="outline" size="lg" className="w-full bg-transparent">
-                  Send Message
+                <Button size="lg" className="w-full bg-primary text-primary-foreground" asChild>
+                  <Link href={`/book/${professional._id}`}>Book Appointment</Link>
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Availability */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Availability</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {professional.availability.map((schedule, index) => (
-                  <div key={index} className="flex justify-between items-start">
-                    <span className="font-medium text-gray-900">{schedule.day}</span>
-                    <div className="text-right text-sm text-gray-600">
-                      {schedule.times.map((time, timeIndex) => (
-                        <div key={timeIndex}>{time}</div>
-                      ))}
+            {professional.availability?.length > 0 && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Availability</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {professional.availability.map((slot, i) => (
+                    <div key={i} className="flex justify-between items-center text-sm">
+                      <span className="font-medium text-foreground">{slot.day}</span>
+                      <span className="text-muted-foreground">{slot.startTime} – {slot.endTime}</span>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ const components: PortableTextComponents = {
     h3: ({ children }) => <h3 className="text-xl font-bold font-serif mb-3 mt-5">{children}</h3>,
     h4: ({ children }) => <h4 className="text-lg font-bold font-serif mb-2 mt-4">{children}</h4>,
     blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-teal-600 pl-6 my-6 italic text-gray-700">{children}</blockquote>
+      <blockquote className="border-l-4 border-primary pl-6 my-6 italic text-gray-700">{children}</blockquote>
     ),
     normal: ({ children }) => <p className="mb-4 leading-relaxed text-gray-700">{children}</p>,
   },
@@ -39,7 +39,7 @@ const components: PortableTextComponents = {
     link: ({ children, value }) => (
       <a
         href={value.href}
-        className="text-teal-600 hover:text-teal-700 underline"
+        className="text-primary hover:text-primary underline"
         target="_blank"
         rel="noopener noreferrer"
       >

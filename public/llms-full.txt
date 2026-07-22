@@ -1,0 +1,76 @@
+# Nexora — Full LLM Reference
+
+> Nexora is a Nigerian healthcare platform. Its tagline is "Together in Care." It connects caregivers, families, and self-advocates with verified healthcare professionals specialising in Intellectual and Developmental Disabilities (IDD).
+
+## Mission
+
+To bridge the gap between families caring for loved ones with IDDs and the qualified specialists who can help them — in Nigeria and across Africa.
+
+## Conditions covered
+
+Nexora professionals specialise in supporting individuals with:
+- Autism Spectrum Disorder (ASD)
+- Down Syndrome
+- Cerebral Palsy
+- Intellectual Disability
+- ADHD and Learning Disabilities
+- Global Developmental Delay
+- Speech and Language Disorders
+- Sensory Processing Disorders
+
+## Professional types on the platform
+
+- Developmental Paediatricians
+- Speech-Language Pathologists / Therapists
+- Occupational Therapists
+- Applied Behaviour Analysis (ABA) Practitioners
+- Behavioural Therapists
+- Psychologists and Psychiatrists
+- Special Educators
+- Social Workers
+- Rehabilitation Medicine specialists
+- Paediatric Dentists / Developmental Dentists
+- Community Medicine physicians
+- Dietitians and Nutritionists
+
+## User types
+
+1. **Caregivers / Family Members** — people seeking professionals for a loved one with an IDD
+2. **Self-advocates** — individuals with IDDs seeking care for themselves
+3. **Healthcare Professionals** — specialists who create profiles to be found and booked by caregivers
+
+## How it works
+
+1. Caregivers register and browse verified professionals by specialisation and location
+2. They book a consultation (video, phone, or in-person) through the platform
+3. The professional confirms or declines the booking
+4. Both parties receive email confirmations
+5. Professionals must submit credentials for verification before appearing in search results
+
+## Pages
+
+- `/` — Homepage with hero, featured professionals, and platform overview
+- `/professionals` — Searchable, filterable directory of verified IDD specialists
+- `/professionals/[id]` — Individual professional profile (bio, credentials, availability, reviews, booking)
+- `/book/[id]` — Booking flow for a specific professional
+- `/bookings` — User's appointment history and upcoming sessions
+- `/resources` — Hub for articles, guides, and tools
+- `/resources/blog` — IDD care blog with expert-written articles
+- `/resources/blog/[slug]` — Individual blog post
+- `/support` — Community support groups where caregivers and professionals connect
+- `/about` — About Nexora
+- `/dashboard` — Role-specific dashboard (caregiver, professional, admin)
+- `/settings` — Account and professional profile management
+
+## Location
+
+Nexora is headquartered in Nigeria and primarily serves Nigerian users, with support for international professionals and caregivers.
+
+## Technology
+
+Built with Next.js 14, MongoDB, AWS Cognito (authentication), Sanity CMS (content), and deployed on AWS Amplify.
+
+## Contact
+
+Website: https://nexoracare.com
+Email: admin@nexoracare.com

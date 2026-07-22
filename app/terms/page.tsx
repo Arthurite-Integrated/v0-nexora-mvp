@@ -1,12 +1,20 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Nexora's terms of service — the rules and conditions for using our platform.",
+  alternates: { canonical: "/terms" },
+  robots: { index: false },
+}
 
 export default function TermsOfServicePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <Link href="/" className="text-teal-600 hover:text-teal-700 font-medium">
+          <Link href="/" className="text-primary hover:text-primary font-medium">
             ← Back to Home
           </Link>
         </div>

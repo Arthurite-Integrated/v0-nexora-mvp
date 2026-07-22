@@ -157,7 +157,7 @@ export default function GeminiChatbot() {
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 border-b bg-gray-50">
         <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-teal-600" />
+          <Bot className="h-5 w-5 text-primary" />
           <span className="font-medium">IDD Care Assistant</span>
           <Badge variant="secondary" className="text-xs">
             AI Powered
@@ -174,8 +174,8 @@ export default function GeminiChatbot() {
           <div key={message.id} className={cn("flex gap-3", message.role === "user" ? "justify-end" : "justify-start")}>
             {message.role === "assistant" && (
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-teal-600" />
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-primary" />
                 </div>
               </div>
             )}
@@ -183,11 +183,11 @@ export default function GeminiChatbot() {
             <div
               className={cn(
                 "max-w-[80%] rounded-lg px-4 py-2",
-                message.role === "user" ? "bg-teal-600 text-white" : "bg-gray-100 text-gray-900",
+                message.role === "user" ? "bg-primary text-white" : "bg-gray-100 text-gray-900",
               )}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-              <div className={cn("text-xs mt-1", message.role === "user" ? "text-teal-100" : "text-gray-500")}>
+              <div className={cn("text-xs mt-1", message.role === "user" ? "text-primary-foreground/80" : "text-gray-500")}>
                 {message.timestamp.toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -208,13 +208,13 @@ export default function GeminiChatbot() {
         {isLoading && (
           <div className="flex gap-3 justify-start">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                <Bot className="h-4 w-4 text-teal-600" />
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <Bot className="h-4 w-4 text-primary" />
               </div>
             </div>
             <div className="bg-gray-100 rounded-lg px-4 py-2">
               <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 <span className="text-sm text-gray-600">Thinking...</span>
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function GeminiChatbot() {
           <Button
             onClick={() => handleSendMessage()}
             disabled={!input.trim() || isLoading}
-            className="bg-teal-600 hover:bg-teal-700"
+            className="bg-primary hover:bg-primary"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>

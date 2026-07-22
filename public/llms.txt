@@ -1,0 +1,29 @@
+# Nexora
+
+> Nexora is a Nigerian healthcare platform connecting caregivers and families with verified specialists in Intellectual and Developmental Disabilities (IDD).
+
+## What Nexora does
+
+Nexora helps families and caregivers in Nigeria find, verify, and book appointments with healthcare professionals who specialise in conditions such as autism spectrum disorder, Down syndrome, cerebral palsy, ADHD, speech delays, and other intellectual and developmental disabilities.
+
+## Who it is for
+
+- Caregivers and family members of individuals with IDDs
+- People with IDDs seeking care for themselves (self-advocates)
+- Healthcare professionals (developmental paediatricians, speech therapists, occupational therapists, ABA practitioners, psychologists, and others) who want to be found by families
+
+## Key pages
+
+- Homepage: https://nexoracare.com
+- Find a Professional: https://nexoracare.com/professionals
+- Resources & Blog: https://nexoracare.com/resources
+- About Nexora: https://nexoracare.com/about
+- Support Community: https://nexoracare.com/support
+
+## Content
+
+Nexora publishes evidence-based articles about IDD care, early intervention strategies, navigating the Nigerian healthcare system, and practical guides for caregivers. All content is written or reviewed by IDD specialists.
+
+## Contact
+
+admin@nexoracare.com

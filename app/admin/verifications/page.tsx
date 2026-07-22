@@ -1,140 +1,115 @@
-import { VerificationCard } from "@/components/verification-card"
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Filter, AlertTriangle, CheckCircle, Clock, X } from "lucide-react"
+import { Search, Filter, AlertTriangle, CheckCircle, Clock, X, Loader2 } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
+import { useRouter } from "next/navigation"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
+import { BackButton } from "@/components/back-button"
 
-// Mock data - in real app this would come from Supabase
-const mockVerifications = [
-  {
-    id: "1",
-    name: "Dr. Adebayo Ogundimu",
-    email: "adebayo.ogundimu@email.com",
-    specialization: "Behavioral Therapy",
-    location: "Lagos, Nigeria",
-    yearsExperience: 8,
-    submittedDate: "2024-01-20",
-    status: "pending" as const,
-    credentials: [
-      {
-        type: "Degree",
-        title: "PhD in Psychology",
-        institution: "University of Lagos",
-        year: "2015",
-        verified: false,
-      },
-      {
-        type: "License",
-        title: "Licensed Clinical Psychologist",
-        institution: "Psychology Board of Nigeria",
-        year: "2016",
-        verified: false,
-      },
-      {
-        type: "Certification",
-        title: "Applied Behavior Analysis (ABA) Certification",
-        institution: "Behavior Analyst Certification Board",
-        year: "2018",
-        verified: false,
-      },
-    ],
-    documents: [
-      { type: "CV", url: "/documents/cv-adebayo.pdf", uploaded: "2024-01-20" },
-      { type: "Degree Certificate", url: "/documents/degree-adebayo.pdf", uploaded: "2024-01-20" },
-      { type: "License", url: "/documents/license-adebayo.pdf", uploaded: "2024-01-20" },
-    ],
-    bio: "Experienced behavioral therapist specializing in Applied Behavior Analysis for children and adults with autism spectrum disorders and other developmental disabilities.",
-    consultationFee: 18000,
-    languages: ["English", "Yoruba"],
-  },
-  {
-    id: "2",
-    name: "Dr. Kemi Adeleke",
-    email: "kemi.adeleke@email.com",
-    specialization: "Speech Therapy",
-    location: "Abuja, Nigeria",
-    yearsExperience: 12,
-    submittedDate: "2024-01-18",
-    status: "under_review" as const,
-    credentials: [
-      {
-        type: "Degree",
-        title: "Masters in Speech-Language Pathology",
-        institution: "University of Ibadan",
-        year: "2012",
-        verified: true,
-      },
-      {
-        type: "Certification",
-        title: "ASHA Certification",
-        institution: "American Speech-Language-Hearing Association",
-        year: "2013",
-        verified: true,
-      },
-    ],
-    documents: [
-      { type: "CV", url: "/documents/cv-kemi.pdf", uploaded: "2024-01-18" },
-      { type: "Degree Certificate", url: "/documents/degree-kemi.pdf", uploaded: "2024-01-18" },
-      { type: "ASHA Certificate", url: "/documents/asha-kemi.pdf", uploaded: "2024-01-18" },
-    ],
-    bio: "Speech-language pathologist with extensive experience in treating communication disorders in children with developmental disabilities.",
-    consultationFee: 20000,
-    languages: ["English", "Hausa"],
-  },
-  {
-    id: "3",
-    name: "Dr. Ibrahim Yusuf",
-    email: "ibrahim.yusuf@email.com",
-    specialization: "Occupational Therapy",
-    location: "Kano, Nigeria",
-    yearsExperience: 6,
-    submittedDate: "2024-01-22",
-    status: "pending" as const,
-    credentials: [
-      {
-        type: "Degree",
-        title: "Masters in Occupational Therapy",
-        institution: "Ahmadu Bello University",
-        year: "2018",
-        verified: false,
-      },
-      {
-        type: "Certification",
-        title: "NBCOT Certification",
-        institution: "National Board for Certification in Occupational Therapy",
-        year: "2019",
-        verified: false,
-      },
-    ],
-    documents: [
-      { type: "CV", url: "/documents/cv-ibrahim.pdf", uploaded: "2024-01-22" },
-      { type: "Degree Certificate", url: "/documents/degree-ibrahim.pdf", uploaded: "2024-01-22" },
-      { type: "NBCOT Certificate", url: "/documents/nbcot-ibrahim.pdf", uploaded: "2024-01-22" },
-    ],
-    bio: "Occupational therapist focused on helping individuals with developmental disabilities achieve independence in daily living activities.",
-    consultationFee: 22000,
-    languages: ["English", "Hausa"],
-  },
-]
+interface Professional {
+  _id: string
+  name: string
+  email: string
+  specialization: string
+  location: string
+  experience: number
+  bio: string
+  credentials: string[]
+  consultationFee: number
+  languages: string[]
+  verificationStatus: "pending" | "under_review" | "verified" | "rejected"
+  isVerified: boolean
+  createdAt: string
+}
+
+interface Stats {
+  pending: number
+  under_review: number
+  verified: number
+  rejected: number
+}
 
 export default function AdminVerificationsPage() {
-  const pendingVerifications = mockVerifications.filter((v) => v.status === "pending")
-  const underReviewVerifications = mockVerifications.filter((v) => v.status === "under_review")
-  const totalPending = pendingVerifications.length + underReviewVerifications.length
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [stats, setStats] = useState<Stats>({ pending: 0, under_review: 0, verified: 0, rejected: 0 })
+  const [isLoading, setIsLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("pending")
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!loading && (!user || user.role !== "admin")) router.push("/dashboard")
+  }, [user, loading, router])
+
+  const fetchVerifications = useCallback(async (status: string) => {
+    setIsLoading(true)
+    try {
+      const res = await fetch(`/api/admin/verifications?status=${status}`)
+      if (res.ok) {
+        const data = await res.json()
+        setProfessionals(data.professionals)
+        setStats(data.stats)
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (user?.role === "admin") fetchVerifications(activeTab)
+  }, [user, activeTab, fetchVerifications])
+
+  const updateStatus = async (id: string, verificationStatus: string) => {
+    setUpdatingId(id)
+    try {
+      const res = await fetch(`/api/admin/verifications/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verificationStatus }),
+      })
+      if (res.ok) {
+        const labels: Record<string, string> = {
+          verified: "Professional approved ✓",
+          rejected: "Application rejected",
+          under_review: "Moved to Under Review",
+          pending: "Reset to Pending",
+        }
+        toast.success(labels[verificationStatus] || "Status updated")
+        fetchVerifications(activeTab)
+      } else {
+        toast.error("Failed to update status")
+      }
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Page Header */}
+          <BackButton fallback="/dashboard" label="Dashboard" className="mb-6" />
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Professional Verifications</h1>
             <p className="text-lg text-gray-600">Review and verify healthcare professional applications</p>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats */}
           <div className="grid md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardContent className="p-6">
@@ -143,13 +118,12 @@ export default function AdminVerificationsPage() {
                     <Clock className="w-6 h-6 text-yellow-600" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">{pendingVerifications.length}</div>
-                    <div className="text-gray-600">Pending Review</div>
+                    <div className="text-2xl font-bold text-gray-900">{stats.pending}</div>
+                    <div className="text-gray-600">Pending</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
@@ -157,13 +131,12 @@ export default function AdminVerificationsPage() {
                     <AlertTriangle className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">{underReviewVerifications.length}</div>
+                    <div className="text-2xl font-bold text-gray-900">{stats.under_review}</div>
                     <div className="text-gray-600">Under Review</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
@@ -171,13 +144,12 @@ export default function AdminVerificationsPage() {
                     <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">67</div>
+                    <div className="text-2xl font-bold text-gray-900">{stats.verified}</div>
                     <div className="text-gray-600">Verified</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
@@ -185,7 +157,7 @@ export default function AdminVerificationsPage() {
                     <X className="w-6 h-6 text-red-600" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">12</div>
+                    <div className="text-2xl font-bold text-gray-900">{stats.rejected}</div>
                     <div className="text-gray-600">Rejected</div>
                   </div>
                 </div>
@@ -193,7 +165,7 @@ export default function AdminVerificationsPage() {
             </Card>
           </div>
 
-          {/* Search and Filters */}
+          {/* Search */}
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4">
@@ -203,77 +175,128 @@ export default function AdminVerificationsPage() {
                     <Input placeholder="Search by name, email, or specialization..." className="pl-10" />
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex items-center gap-2 bg-transparent">
-                    <Filter className="w-4 h-4" />
-                    Filter by Status
-                  </Button>
-                  <Button variant="outline" className="flex items-center gap-2 bg-transparent">
-                    <Filter className="w-4 h-4" />
-                    Filter by Specialization
-                  </Button>
-                </div>
+                <Button variant="outline" className="flex items-center gap-2 bg-transparent">
+                  <Filter className="w-4 h-4" />
+                  Filter
+                </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Verification Tabs */}
-          <Tabs defaultValue="pending" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="pending">
-                Pending ({pendingVerifications.length})
-                {pendingVerifications.length > 0 && <span className="ml-2 w-2 h-2 bg-red-500 rounded-full"></span>}
+                Pending ({stats.pending})
+                {stats.pending > 0 && <span className="ml-2 w-2 h-2 bg-red-500 rounded-full inline-block" />}
               </TabsTrigger>
-              <TabsTrigger value="review">Under Review ({underReviewVerifications.length})</TabsTrigger>
+              <TabsTrigger value="under_review">Under Review ({stats.under_review})</TabsTrigger>
               <TabsTrigger value="completed">Completed</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="pending" className="space-y-4">
-              {pendingVerifications.length > 0 ? (
-                <div className="space-y-4">
-                  {pendingVerifications.map((verification) => (
-                    <VerificationCard key={verification.id} verification={verification} />
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No pending verifications</h3>
-                    <p className="text-gray-600">All professional applications have been reviewed</p>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
+            {["pending", "under_review", "completed"].map((tab) => (
+              <TabsContent key={tab} value={tab} className="space-y-4">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+                ) : professionals.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No {tab === "completed" ? "completed" : tab.replace("_", " ")} verifications
+                      </h3>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  professionals.map((p) => (
+                    <Card key={p._id}>
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">{p.name}</h3>
+                              <Badge
+                                variant={
+                                  p.verificationStatus === "verified"
+                                    ? "default"
+                                    : p.verificationStatus === "rejected"
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                              >
+                                {p.verificationStatus.replace("_", " ")}
+                              </Badge>
+                            </div>
+                            <p className="text-gray-600 text-sm mb-1">{p.email}</p>
+                            <p className="text-gray-700 text-sm mb-1">
+                              <strong>Specialization:</strong> {p.specialization}
+                            </p>
+                            <p className="text-gray-700 text-sm mb-1">
+                              <strong>Location:</strong> {p.location} &nbsp;|&nbsp;
+                              <strong>Experience:</strong> {p.experience} years
+                            </p>
+                            {p.credentials?.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {p.credentials.map((c, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">
+                                    {c}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            {p.bio && <p className="text-gray-600 text-sm mt-2 line-clamp-2">{p.bio}</p>}
+                          </div>
 
-            <TabsContent value="review" className="space-y-4">
-              {underReviewVerifications.length > 0 ? (
-                <div className="space-y-4">
-                  {underReviewVerifications.map((verification) => (
-                    <VerificationCard key={verification.id} verification={verification} />
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No applications under review</h3>
-                    <p className="text-gray-600">Applications currently being reviewed will appear here</p>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            <TabsContent value="completed" className="space-y-4">
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Completed verifications</h3>
-                  <p className="text-gray-600">View history of approved and rejected applications</p>
-                  <Button className="mt-4">View History</Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                          <div className="flex flex-col gap-2 shrink-0">
+                            {(p.verificationStatus === "pending" || p.verificationStatus === "under_review") && (
+                              <>
+                                {p.verificationStatus === "pending" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={updatingId === p._id}
+                                    onClick={() => updateStatus(p._id, "under_review")}
+                                  >
+                                    Start Review
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  disabled={updatingId === p._id}
+                                  onClick={() => updateStatus(p._id, "verified")}
+                                >
+                                  {updatingId === p._id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Approve"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  disabled={updatingId === p._id}
+                                  onClick={() => updateStatus(p._id, "rejected")}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            {(p.verificationStatus === "verified" || p.verificationStatus === "rejected") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={updatingId === p._id}
+                                onClick={() => updateStatus(p._id, "pending")}
+                              >
+                                Re-review
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </TabsContent>
+            ))}
           </Tabs>
         </div>
       </div>

@@ -1,7 +1,20 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Heart, Users, Shield, Target, CheckCircle } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "About Us",
+  description:
+    "Learn about Nexora's mission to connect Nigerian families and caregivers with verified IDD healthcare specialists. Together in Care.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About Nexora — Together in Care",
+    description:
+      "Nexora bridges the gap between families of individuals with Intellectual and Developmental Disabilities and the specialists who can help them.",
+  },
+}
 
 export default function AboutPage() {
   return (
@@ -23,7 +36,7 @@ export default function AboutPage() {
           <Card className="shadow-lg border-0">
             <CardHeader>
               <div className="flex items-center gap-3 mb-4">
-                <Target className="w-8 h-8 text-teal-600" />
+                <Target className="w-8 h-8 text-primary" />
                 <CardTitle className="text-3xl">Our Mission</CardTitle>
               </div>
             </CardHeader>
@@ -48,10 +61,10 @@ export default function AboutPage() {
           <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">Our Core Values</h2>
           
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <Card className="border-2 hover:border-teal-200 transition-colors">
+            <Card className="border-2 hover:border-primary/20 transition-colors">
               <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Heart className="w-8 h-8 text-teal-600" />
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="w-8 h-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Compassion</CardTitle>
               </CardHeader>
@@ -60,10 +73,10 @@ export default function AboutPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-teal-200 transition-colors">
+            <Card className="border-2 hover:border-primary/20 transition-colors">
               <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-8 h-8 text-teal-600" />
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-8 h-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Trust</CardTitle>
               </CardHeader>
@@ -72,10 +85,10 @@ export default function AboutPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-teal-200 transition-colors">
+            <Card className="border-2 hover:border-primary/20 transition-colors">
               <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-teal-600" />
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Community</CardTitle>
               </CardHeader>
@@ -144,13 +157,13 @@ export default function AboutPage() {
             ].map((section, idx) => (
               <Card key={idx} className="shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-teal-700">{section.title}</CardTitle>
+                  <CardTitle className="text-2xl text-primary">{section.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
                     {section.items.map((item, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                        <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                         <span className="text-slate-700">{item}</span>
                       </li>
                     ))}
@@ -163,7 +176,7 @@ export default function AboutPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-teal-600 text-white">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-primary text-white">
         <div className="container mx-auto text-center max-w-3xl">
           <h2 className="text-3xl font-bold mb-4">Join Our Community</h2>
           <p className="text-xl text-teal-50 mb-8">
@@ -176,7 +189,7 @@ export default function AboutPage() {
             <Button 
               size="lg" 
               variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-teal-600 bg-transparent"
+              className="border-white text-white hover:bg-white hover:text-primary bg-transparent"
               asChild
             >
               <Link href="/register?role=professional">Join as Professional</Link>
@@ -187,7 +200,7 @@ export default function AboutPage() {
 
       {/* Back to Home */}
       <section className="py-8 px-4 text-center">
-        <Link href="/" className="text-teal-600 hover:text-teal-700 font-medium">
+        <Link href="/" className="text-primary hover:text-primary font-medium">
           ← Back to Home
         </Link>
       </section>

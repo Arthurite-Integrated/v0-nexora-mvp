@@ -1,114 +1,87 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 
-interface User {
-  id: string
+export interface AuthUser {
+  _id: string
+  cognitoId: string
   email: string
-  role: string
   name: string
-  [key: string]: any
+  role: "caregiver" | "professional" | "admin"
+  phone?: string
+  location?: string
+  locationData?: {
+    country: string
+    countryName: string
+    state: string
+    stateName: string
+    city: string
+  }
+  profileImage?: string
+  isSelfAdvocate?: boolean
 }
 
 interface AuthContextType {
-  user: User | null
+  user: AuthUser | null
   loading: boolean
-  signOut: () => Promise<void>
+  isLoading: boolean
   refreshUser: () => Promise<void>
+  signOut: () => Promise<void>
+  deleteAccount: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  isLoading: true,
+  refreshUser: async () => {},
+  signOut: async () => {},
+  deleteAccount: async () => {},
+})
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
-  useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (session?.user) {
-          // Get user profile from database
-          const { data: profile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-
-          setUser({ 
-            ...session.user, 
-            ...profile,
-            name: profile?.name || session.user.email?.split('@')[0] || 'User',
-            role: profile?.role || 'caregiver'
-          })
-        }
-      } catch (error) {
-        console.error('Auth: Error getting initial session:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    getInitialSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        // Get user profile from database
-        const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-
-        setUser({ 
-          ...session.user, 
-          ...profile,
-          name: profile?.name || session.user.email?.split('@')[0] || 'User',
-          role: profile?.role || 'caregiver'
-        })
-      } else if (event === 'SIGNED_OUT') {
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me")
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user)
+      } else {
         setUser(null)
       }
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    } catch {
+      setUser(null)
+    }
   }, [])
 
-  const signOut = async () => {
-    await supabase.auth.signOut()
+  useEffect(() => {
+    refreshUser().finally(() => setLoading(false))
+  }, [refreshUser])
+
+  const signOut = useCallback(async () => {
+    await fetch("/api/auth/logout", { method: "POST" })
     setUser(null)
-  }
+    router.push("/")
+  }, [router])
 
-  const refreshUser = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-
-        setUser({ 
-          ...session.user, 
-          ...profile,
-          name: profile?.name || session.user.email?.split('@')[0] || 'User',
-          role: profile?.role || 'caregiver'
-        })
-      }
-    } catch (error) {
-      console.error('Auth: Error refreshing user:', error)
+  const deleteAccount = useCallback(async () => {
+    const res = await fetch("/api/auth/delete-account", { method: "DELETE" })
+    if (res.ok) {
+      setUser(null)
+      router.push("/")
+    } else {
+      const data = await res.json()
+      throw new Error(data.error || "Failed to delete account")
     }
-  }
+  }, [router])
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, isLoading: loading, refreshUser, signOut, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   )
@@ -117,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
 }

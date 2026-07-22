@@ -244,5 +244,119 @@ export const blockContent = {
   ],
 }
 
+export const staticPage = {
+  name: "staticPage",
+  title: "Static Page",
+  type: "document",
+  fields: [
+    {
+      name: "title",
+      title: "Title",
+      type: "string",
+      validation: (Rule: any) => Rule.required(),
+    },
+    {
+      name: "slug",
+      title: "Slug",
+      type: "slug",
+      options: { source: "title", maxLength: 96 },
+      validation: (Rule: any) => Rule.required(),
+    },
+    {
+      name: "body",
+      title: "Body",
+      type: "blockContent",
+    },
+    {
+      name: "seo",
+      title: "SEO",
+      type: "object",
+      fields: [
+        { name: "metaTitle", title: "Meta Title", type: "string" },
+        { name: "metaDescription", title: "Meta Description", type: "text", rows: 3 },
+      ],
+    },
+  ],
+  preview: {
+    select: { title: "title", subtitle: "slug.current" },
+  },
+}
+
+export const resource = {
+  name: "resource",
+  title: "Resource",
+  type: "document",
+  fields: [
+    {
+      name: "title",
+      title: "Title",
+      type: "string",
+      validation: (Rule: any) => Rule.required(),
+    },
+    {
+      name: "slug",
+      title: "Slug",
+      type: "slug",
+      options: { source: "title", maxLength: 96 },
+      validation: (Rule: any) => Rule.required(),
+    },
+    {
+      name: "description",
+      title: "Description",
+      type: "text",
+      rows: 3,
+    },
+    {
+      name: "type",
+      title: "Type",
+      type: "string",
+      options: {
+        list: [
+          { title: "Guide", value: "guide" },
+          { title: "Template", value: "template" },
+          { title: "Tool", value: "tool" },
+          { title: "Video", value: "video" },
+        ],
+      },
+      validation: (Rule: any) => Rule.required(),
+    },
+    {
+      name: "categories",
+      title: "Categories",
+      type: "array",
+      of: [{ type: "reference", to: { type: "category" } }],
+    },
+    {
+      name: "downloadUrl",
+      title: "Download URL",
+      type: "url",
+    },
+    {
+      name: "externalUrl",
+      title: "External URL",
+      type: "url",
+    },
+    {
+      name: "featured",
+      title: "Featured",
+      type: "boolean",
+    },
+    {
+      name: "publishedAt",
+      title: "Published At",
+      type: "datetime",
+    },
+    {
+      name: "thumbnail",
+      title: "Thumbnail",
+      type: "image",
+      options: { hotspot: true },
+    },
+  ],
+  preview: {
+    select: { title: "title", subtitle: "type", media: "thumbnail" },
+  },
+}
+
 // Export all schemas
-export const schemaTypes = [blogPost, category, author, blockContent]
+export const schemaTypes = [blogPost, category, author, blockContent, staticPage, resource]

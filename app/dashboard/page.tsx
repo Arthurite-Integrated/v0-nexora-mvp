@@ -18,9 +18,9 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
@@ -29,7 +29,7 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-4">Not Authenticated</h2>
           <p className="text-gray-600 mb-4">Redirecting to login...</p>
@@ -39,11 +39,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {user.role === "caregiver" && <CaregiverDashboard user={user} />}
-        {user.role === "professional" && <ProfessionalDashboard user={user} />}
-        {user.role === "admin" && <AdminDashboard user={user} />}
+        {user.role === "caregiver" && <CaregiverDashboard user={{ id: user._id, name: user.name, email: user.email, role: user.role }} />}
+        {user.role === "professional" && <ProfessionalDashboard user={{ id: user._id, name: user.name, email: user.email, role: user.role }} />}
+        {user.role === "admin" && <AdminDashboard user={{ id: user._id, name: user.name, email: user.email, role: user.role }} />}
         {!user.role && (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <p className="text-red-600 mb-4">No role assigned to your account.</p>

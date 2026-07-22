@@ -6,9 +6,31 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Heart, Users, Shield, Calendar, Star, MapPin } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
+import { useEffect, useState } from "react"
+import { CookiePreferencesButton } from "@/components/cookie-banner"
+
+interface FeaturedProfessional {
+  _id: string
+  name: string
+  specialization: string
+  location: string
+  averageRating: number
+  reviewCount: number
+  profileImage?: string
+}
 
 export default function HomePage() {
   const { user } = useAuth()
+  const [featuredProfessionals, setFeaturedProfessionals] = useState<FeaturedProfessional[]>([])
+  const [proLoading, setProLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/professionals?verified=true&limit=3")
+      .then((r) => r.json())
+      .then((d) => setFeaturedProfessionals(d.professionals || []))
+      .catch(() => {})
+      .finally(() => setProLoading(false))
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -98,6 +120,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured Professionals Preview */}
+      {(proLoading || featuredProfessionals.length > 0) && (
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="container mx-auto">
           <div className="text-center mb-12">
@@ -106,71 +129,63 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                name: "Prof. Folakemi Oredugba",
-                specialization: "Developmental Pediatric Dentistry",
-                location: "Lagos, Nigeria",
-                rating: 4.9,
-                reviews: 127,
-                image: "/images/prof-oredugba.jpeg",
-              },
-              {
-                name: "Dr. Ronke Oluwo",
-                specialization: "Pediatric Dentistry",
-                location: "Lagos, Nigeria",
-                rating: 4.8,
-                reviews: 89,
-                image: "/images/dr-oluwo.png",
-              },
-              {
-                name: "Dr. Alero Roberts",
-                specialization: "Community Medicine",
-                location: "Lagos, Nigeria",
-                rating: 4.8,
-                reviews: 156,
-                image: "/images/dr-roberts.png",
-              },
-            ].map((professional, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="text-center">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden">
-                    <img
-                      src={professional.image || "/placeholder.svg"}
-                      alt={professional.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <CardTitle className="text-lg">{professional.name}</CardTitle>
-                  <Badge variant="secondary" className="w-fit mx-auto">
-                    {professional.specialization}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="text-center space-y-2">
-                  <div className="flex items-center justify-center text-sm text-gray-600">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {professional.location}
-                  </div>
-                  <div className="flex items-center justify-center text-sm">
-                    <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                    <span className="font-medium">{professional.rating}</span>
-                    <span className="text-gray-600 ml-1">({professional.reviews} reviews)</span>
-                  </div>
-                  <Button size="sm" className="w-full mt-4">
-                    View Profile
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+            {proLoading
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardHeader className="text-center">
+                      <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-200" />
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2" />
+                      <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto" />
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="h-3 bg-gray-200 rounded" />
+                      <div className="h-3 bg-gray-200 rounded" />
+                    </CardContent>
+                  </Card>
+                ))
+              : featuredProfessionals.map((professional) => (
+                  <Card key={professional._id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="text-center">
+                      <div className="w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-gray-200">
+                        <img
+                          src={professional.profileImage || "/placeholder.svg"}
+                          alt={professional.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <CardTitle className="text-lg">{professional.name}</CardTitle>
+                      <Badge variant="secondary" className="w-fit mx-auto">
+                        {professional.specialization}
+                      </Badge>
+                    </CardHeader>
+                    <CardContent className="text-center space-y-2">
+                      <div className="flex items-center justify-center text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 mr-1" />
+                        {professional.location}
+                      </div>
+                      <div className="flex items-center justify-center text-sm">
+                        <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                        <span className="font-medium">{professional.averageRating.toFixed(1)}</span>
+                        <span className="text-gray-600 ml-1">({professional.reviewCount} reviews)</span>
+                      </div>
+                      <Button size="sm" className="w-full mt-4" asChild>
+                        <Link href={`/professionals/${professional._id}`}>View Profile</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
           </div>
 
+          {!proLoading && featuredProfessionals.length > 0 && (
           <div className="text-center mt-8">
             <Button variant="outline" size="lg" asChild>
-              <Link href="/">View All Professionals</Link>
+              <Link href="/professionals">View All Professionals</Link>
             </Button>
           </div>
+          )}
         </div>
       </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-primary text-white">
@@ -283,6 +298,8 @@ export default function HomePage() {
               <Link href="/about" className="hover:text-white transition-colors">
                 About Us
               </Link>
+              <span className="hidden sm:inline">•</span>
+              <CookiePreferencesButton />
             </div>
             <p>&copy; 2024 Nexora. All rights reserved. Together in Care.</p>
           </div>

@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X, User, LogOut } from "lucide-react"
+import { Menu, X, User, LogOut, Settings } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function Header() {
@@ -48,6 +48,9 @@ export function Header() {
             <Link href="/resources" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
               Resources
             </Link>
+            <Link href="/support" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+              Community
+            </Link>
           </nav>
 
           {/* Desktop Buttons */}
@@ -58,6 +61,12 @@ export function Header() {
                   <Link href="/dashboard">
                     <User className="h-4 w-4 mr-2" />
                     Dashboard
+                  </Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link href="/settings">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
                   </Link>
                 </Button>
                 <Button variant="ghost" onClick={handleSignOut}>
@@ -119,6 +128,12 @@ export function Header() {
               >
                 Resources
               </Link>
+              <Link href="/support"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Community
+              </Link>
               <div className="border-t pt-4 mt-4">
                 <div className="space-y-2">
                   {user ? (
@@ -127,6 +142,12 @@ export function Header() {
                         <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
                           <User className="h-4 w-4 mr-2" />
                           Dashboard
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start" asChild>
+                        <Link href="/settings" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Settings className="h-4 w-4 mr-2" />
+                          Settings
                         </Link>
                       </Button>
                       <Button variant="ghost" className="w-full justify-start" onClick={() => { handleSignOut(); setIsMobileMenuOpen(false); }}>

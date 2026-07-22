@@ -1,12 +1,20 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "Nexora's privacy policy — how we collect, use, and protect your personal information.",
+  alternates: { canonical: "/privacy" },
+  robots: { index: false },
+}
 
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <Link href="/" className="text-teal-600 hover:text-teal-700 font-medium">
+          <Link href="/" className="text-primary hover:text-primary font-medium">
             ← Back to Home
           </Link>
         </div>

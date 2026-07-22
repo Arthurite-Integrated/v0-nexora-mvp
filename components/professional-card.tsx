@@ -16,7 +16,7 @@ interface Professional {
   yearsExperience: number
   consultationFee: number
   languages: string[]
-  image: string
+  image?: string | null
 }
 
 interface ProfessionalCardProps {

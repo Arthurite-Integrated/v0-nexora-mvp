@@ -4,85 +4,99 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Backgrounds */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.13 0.008 250);
+
+  /* Card / Popover — pure white */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.13 0.008 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.13 0.008 250);
 
-  /* Updated primary colors to match Nexora brand - teal primary */
-  --primary: oklch(0.5 0.15 180); /* Teal #008080 */
-  --primary-foreground: oklch(0.985 0 0);
+  /* Primary — deep muted teal, used sparingly */
+  --primary: oklch(0.38 0.085 195);
+  --primary-foreground: oklch(0.99 0 0);
 
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  /* Secondary — very light zinc */
+  --secondary: oklch(0.96 0.003 250);
+  --secondary-foreground: oklch(0.25 0.008 250);
 
-  /* Added accent color for coral accents */
-  --accent: oklch(0.7 0.15 25); /* Warm Coral #FF6F61 */
-  --accent-foreground: oklch(0.985 0 0);
+  /* Muted — zinc-100 level */
+  --muted: oklch(0.96 0.003 250);
+  --muted-foreground: oklch(0.52 0.012 250);
 
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Accent — same as secondary, no coral */
+  --accent: oklch(0.94 0.004 250);
+  --accent-foreground: oklch(0.25 0.008 250);
+
+  /* Destructive */
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  /* Borders & inputs */
+  --border: oklch(0.90 0.004 250);
+  --input: oklch(0.90 0.004 250);
+  --ring: oklch(0.38 0.085 195);
+
+  /* Border radius — slightly tighter, more clinical */
+  --radius: 0.5rem;
+
+  /* Charts */
+  --chart-1: oklch(0.38 0.085 195);
+  --chart-2: oklch(0.52 0.08 195);
+  --chart-3: oklch(0.65 0.07 195);
+  --chart-4: oklch(0.40 0.05 220);
+  --chart-5: oklch(0.55 0.10 170);
+
+  /* Sidebar */
+  --sidebar: oklch(0.98 0.002 250);
+  --sidebar-foreground: oklch(0.13 0.008 250);
+  --sidebar-primary: oklch(0.38 0.085 195);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.004 250);
+  --sidebar-accent-foreground: oklch(0.25 0.008 250);
+  --sidebar-border: oklch(0.90 0.004 250);
+  --sidebar-ring: oklch(0.38 0.085 195);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.6 0.15 180); /* Lighter teal for dark mode */
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.75 0.15 25); /* Lighter coral for dark mode */
-  --accent-foreground: oklch(0.145 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: oklch(0.12 0.008 250);
+  --foreground: oklch(0.96 0.004 250);
+  --card: oklch(0.16 0.008 250);
+  --card-foreground: oklch(0.96 0.004 250);
+  --popover: oklch(0.16 0.008 250);
+  --popover-foreground: oklch(0.96 0.004 250);
+  --primary: oklch(0.55 0.10 195);
+  --primary-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.22 0.008 250);
+  --secondary-foreground: oklch(0.96 0.004 250);
+  --muted: oklch(0.22 0.008 250);
+  --muted-foreground: oklch(0.62 0.012 250);
+  --accent: oklch(0.22 0.008 250);
+  --accent-foreground: oklch(0.96 0.004 250);
+  --destructive: oklch(0.45 0.20 25);
+  --destructive-foreground: oklch(0.96 0 0);
+  --border: oklch(0.25 0.008 250);
+  --input: oklch(0.25 0.008 250);
+  --ring: oklch(0.55 0.10 195);
+  --chart-1: oklch(0.55 0.10 195);
+  --chart-2: oklch(0.65 0.09 195);
+  --chart-3: oklch(0.72 0.08 195);
+  --chart-4: oklch(0.50 0.06 220);
+  --chart-5: oklch(0.60 0.11 170);
+  --sidebar: oklch(0.16 0.008 250);
+  --sidebar-foreground: oklch(0.96 0.004 250);
+  --sidebar-primary: oklch(0.55 0.10 195);
+  --sidebar-primary-foreground: oklch(0.12 0 0);
+  --sidebar-accent: oklch(0.22 0.008 250);
+  --sidebar-accent-foreground: oklch(0.96 0.004 250);
+  --sidebar-border: oklch(0.25 0.008 250);
+  --sidebar-ring: oklch(0.55 0.10 195);
 }
 
 @theme inline {
-  /* updated font variables to use Inter (humanist sans-serif) and Crimson Text (gentle serif) */
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-sans);
   --font-serif: var(--font-crimson);
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
   --color-background: var(--background);
@@ -128,6 +142,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }

@@ -8,11 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabaseClient"
-import { useAuth } from "@/contexts/AuthContext" // <-- Import this
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -24,7 +22,7 @@ export default function LoginPage() {
   })
   const router = useRouter()
 
-  const { user, loading } = useAuth() // <-- Get auth state
+  const { user, loading, refreshUser } = useAuth()
 
   useEffect(() => {
     if (!loading && user) {
@@ -38,19 +36,24 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const {data, error} = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
       })
+      const data = await res.json()
 
-      if (error) {
-        setError(error.message || "Login failed. Please try again.")
+      if (!res.ok) {
+        if (data.code === "EMAIL_NOT_VERIFIED") {
+          setError("Please verify your email address before signing in.")
+        } else {
+          setError(data.error || "Login failed. Please try again.")
+        }
         return
       }
 
-      // AuthContext will pick up the session via onAuthStateChange
+      await refreshUser()
       router.push("/dashboard")
-      
     } catch (err) {
       console.error("Login error:", err)
       setError("Login failed. Please try again.")
@@ -83,9 +86,10 @@ export default function LoginPage() {
           <CardContent>
             <div className="space-y-4">
               {error && (
-                <Alert className="border-red-200 bg-red-50">
-                  <AlertDescription className="text-red-700">{error}</AlertDescription>
-                </Alert>
+                <p className="flex items-start gap-2 text-sm text-destructive">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  {error}
+                </p>
               )}
 
               <div className="space-y-2">
@@ -101,7 +105,7 @@ export default function LoginPage() {
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10 border-slate-200 focus:border-teal-500 focus:ring-teal-500"
+                    className="pl-10 border-slate-200 focus:border-primary focus:ring-primary"
                     required
                   />
                 </div>
@@ -120,7 +124,7 @@ export default function LoginPage() {
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pl-10 pr-10 border-slate-200 focus:border-teal-500 focus:ring-teal-500"
+                    className="pl-10 pr-10 border-slate-200 focus:border-primary focus:ring-primary"
                     required
                   />
                   <button
@@ -138,13 +142,13 @@ export default function LoginPage() {
                   <input
                     id="remember"
                     type="checkbox"
-                    className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    className="rounded border-slate-300 text-primary focus:ring-primary"
                   />
                   <Label htmlFor="remember" className="text-sm text-slate-600">
                     Remember me
                   </Label>
                 </div>
-                <Link href="/forgot-password" className="text-sm text-teal-600 hover:text-teal-700 font-medium">
+                <Link href="/forgot-password" className="text-sm text-primary hover:text-primary font-medium">
                   Forgot password?
                 </Link>
               </div>
@@ -153,7 +157,7 @@ export default function LoginPage() {
                 type="submit"
                 disabled={isLoading}
                 onClick={handleSubmit}
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5"
+                className="w-full bg-primary hover:bg-primary text-white font-medium py-2.5"
               >
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
@@ -162,7 +166,7 @@ export default function LoginPage() {
             <div className="mt-6 text-center">
               <p className="text-slate-600">
                 Don't have an account?{" "}
-                <Link href="/register" className="text-teal-600 hover:text-teal-700 font-medium">
+                <Link href="/register" className="text-primary hover:text-primary font-medium">
                   Sign up here
                 </Link>
               </p>
@@ -173,11 +177,11 @@ export default function LoginPage() {
         <div className="mt-8 text-center text-sm text-slate-500">
           <p>
             By signing in, you agree to our{" "}
-            <Link href="/terms" className="text-teal-600 hover:text-teal-700">
+            <Link href="/terms" className="text-primary hover:text-primary">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-teal-600 hover:text-teal-700">
+            <Link href="/privacy" className="text-primary hover:text-primary">
               Privacy Policy
             </Link>
           </p>
