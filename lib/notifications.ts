@@ -249,7 +249,7 @@ export async function sendBookingConfirmedCaregiver(data: BookingEmailData) {
     preheader: `Your appointment with ${data.professionalName} is confirmed`,
     body: `
       <div style="text-align:center;margin-bottom:24px;">
-        <div style="display:inline-block;background:#d1fae5;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:24px;text-align:center;">✓</div>
+        <div style="display:inline-block;background:#d1fae5;border-radius:50%;width:56px;height:56px;text-align:center;vertical-align:middle;"><div style="line-height:56px;font-size:22px;color:#065f46;font-weight:700;">&#10003;</div></div>
       </div>
       <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#111827;text-align:center;">Appointment Confirmed</h2>
       <p style="margin:0 0 24px;font-size:14px;color:#6b7280;text-align:center;">
@@ -323,9 +323,9 @@ export async function sendProfessionalApproved(professionalEmail: string, profes
     preheader: `Your Nexora professional profile has been approved`,
     body: `
       <div style="text-align:center;margin-bottom:24px;">
-        <div style="display:inline-block;background:#d1fae5;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:24px;text-align:center;">✓</div>
+        <div style="display:inline-block;background:#d1fae5;border-radius:50%;width:56px;height:56px;text-align:center;vertical-align:middle;"><div style="line-height:56px;font-size:22px;color:#065f46;font-weight:700;">&#10003;</div></div>
       </div>
-      <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#111827;text-align:center;">Profile Approved!</h2>
+      <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#111827;text-align:center;">Profile Approved</h2>
       <p style="margin:0 0 24px;font-size:14px;color:#6b7280;text-align:center;">
         Congratulations, <strong>${professionalName}</strong>! Your professional profile has been reviewed and approved by the Nexora team.
       </p>
@@ -343,7 +343,7 @@ export async function sendProfessionalApproved(professionalEmail: string, profes
     ctaLabel: "Go to Dashboard",
     ctaUrl: `${APP_URL}/dashboard`,
   })
-  await sendMail(professionalEmail, "Your Nexora Profile Has Been Approved 🎉", html)
+  await sendMail(professionalEmail, "Your Nexora Profile Has Been Approved", html)
 }
 
 // ── 6. Professional rejected ──────────────────────────────────────────────────
