@@ -237,8 +237,13 @@ export default function AdminVerificationsPage() {
                 Pending ({stats.pending})
                 {stats.pending > 0 && <span className="ml-1.5 w-2 h-2 bg-red-500 rounded-full inline-block" />}
               </TabsTrigger>
-              <TabsTrigger value="under_review" className="text-xs sm:text-sm">Under Review ({stats.under_review})</TabsTrigger>
-              <TabsTrigger value="completed" className="text-xs sm:text-sm">Completed</TabsTrigger>
+              <TabsTrigger value="under_review" className="text-xs sm:text-sm">
+                Under Review ({stats.under_review})
+                {stats.under_review > 0 && <span className="ml-1.5 w-2 h-2 bg-blue-500 rounded-full inline-block" />}
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs sm:text-sm">
+                Completed ({stats.verified + stats.rejected})
+              </TabsTrigger>
               <TabsTrigger value="documents" className="text-xs sm:text-sm">
                 Documents
                 {docProfessionals.length > 0 && <span className="ml-1.5 w-2 h-2 bg-yellow-500 rounded-full inline-block" />}

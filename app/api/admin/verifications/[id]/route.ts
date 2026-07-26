@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/auth-middleware"
 import { connectDB } from "@/lib/mongodb"
 import { Professional } from "@/lib/models/Professional"
+import { User } from "@/lib/models/User"
+import { sendProfessionalApproved, sendProfessionalRejected } from "@/lib/notifications"
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   return requireAdmin(req, async (req) => {
@@ -21,9 +23,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           isVerified: verificationStatus === "verified",
         },
         { new: true }
-      ).lean()
+      ).lean() as { name: string; email: string; userId: string } | null
 
       if (!professional) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+      // Send email on approved or rejected
+      if (verificationStatus === "verified" || verificationStatus === "rejected") {
+        // Prefer the User record email (more reliable than professional.email)
+        const proUser = await User.findOne({ _id: professional.userId }, "email").lean() as { email?: string } | null
+        const email = proUser?.email || professional.email
+        const name = professional.name
+
+        Promise.resolve().then(() =>
+          verificationStatus === "verified"
+            ? sendProfessionalApproved(email, name)
+            : sendProfessionalRejected(email, name)
+        ).catch(err => console.error("[verifications/PATCH] email error:", err))
+      }
 
       return NextResponse.json({ professional })
     } catch {
