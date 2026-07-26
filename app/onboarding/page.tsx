@@ -72,6 +72,27 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [location, setLocation] = useState<LocationValue>(EMPTY_LOCATION)
+  const [locationSeeded, setLocationSeeded] = useState(false)
+
+  // Pre-fill location from the user's account (set during registration)
+  useEffect(() => {
+    if (user && !locationSeeded) {
+      if (user.locationData?.country) {
+        setLocation(user.locationData as LocationValue)
+      } else if (user.location) {
+        // Parse flat string "City, State, Country"
+        const parts = user.location.split(",").map((s: string) => s.trim())
+        if (parts.length >= 2) {
+          setLocation({
+            country: "", countryName: parts[parts.length - 1] || "",
+            state: "", stateName: parts[parts.length - 2] || "",
+            city: parts.length >= 3 ? parts[0] : "",
+          })
+        }
+      }
+      setLocationSeeded(true)
+    }
+  }, [user, locationSeeded])
 
   const [profile, setProfile] = useState({
     specialization: "",
