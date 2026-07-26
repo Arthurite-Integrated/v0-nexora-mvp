@@ -10,28 +10,68 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const search = searchParams.get("search") || ""
-    const specialization = searchParams.get("specialization") || ""
-    const location = searchParams.get("location") || ""
+    const specialization = searchParams.get("specialization") || ""   // comma-separated
+    const location = searchParams.get("location") || ""               // comma-separated
+    const languages = searchParams.get("languages") || ""             // comma-separated
     const verified = searchParams.get("verified")
+    const credentialVerified = searchParams.get("credentialVerified")
+    const minExperience = parseInt(searchParams.get("minExperience") || "0")
+    const maxFee = parseInt(searchParams.get("maxFee") || "0")
+    const sortBy = searchParams.get("sortBy") || "rating"
     const limit = parseInt(searchParams.get("limit") || "20")
     const page = parseInt(searchParams.get("page") || "1")
 
     const query: Record<string, unknown> = {}
 
     if (verified === "true") query.isVerified = true
-    if (specialization) query.specialization = { $regex: specialization, $options: "i" }
-    if (location) query.location = { $regex: location, $options: "i" }
+    if (credentialVerified === "true") query.credentialVerified = true
+    if (minExperience > 0) query.experience = { $gte: minExperience }
+    if (maxFee > 0) query.consultationFee = { $lte: maxFee }
+
+    // Specialization — multiple values → $in with case-insensitive match
+    if (specialization) {
+      const specs = specialization.split(",").map(s => s.trim()).filter(Boolean)
+      query.specialization = specs.length === 1
+        ? { $regex: specs[0], $options: "i" }
+        : { $in: specs.map(s => new RegExp(s, "i")) }
+    }
+
+    // Location — multiple cities/states → $or across location field
+    if (location) {
+      const locs = location.split(",").map(l => l.trim()).filter(Boolean)
+      query.location = { $in: locs.map(l => new RegExp(l, "i")) }
+    }
+
+    // Languages — professional must speak ALL selected languages
+    if (languages) {
+      const langs = languages.split(",").map(l => l.trim()).filter(Boolean)
+      if (langs.length > 0) query.languages = { $all: langs }
+    }
+
+    // Text search across name, specialization, bio, location
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
         { specialization: { $regex: search, $options: "i" } },
         { bio: { $regex: search, $options: "i" } },
+        { location: { $regex: search, $options: "i" } },
       ]
     }
 
+    // Sort
+    type SortSpec = Record<string, 1 | -1>
+    const sortMap: Record<string, SortSpec> = {
+      rating:     { credentialVerified: -1, isVerified: -1, averageRating: -1, createdAt: -1 },
+      experience: { credentialVerified: -1, experience: -1, createdAt: -1 },
+      fee_asc:    { consultationFee: 1, createdAt: -1 },
+      fee_desc:   { consultationFee: -1, createdAt: -1 },
+    }
+    const sort = sortMap[sortBy] ?? sortMap.rating
+
     const total = await Professional.countDocuments(query)
     const professionals = await Professional.find(query)
-      .sort({ credentialVerified: -1, isVerified: -1, averageRating: -1, createdAt: -1 })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .sort(sort as any)
       .skip((page - 1) * limit)
       .limit(limit)
       .lean()
