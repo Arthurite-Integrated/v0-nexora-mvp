@@ -17,6 +17,7 @@ interface Professional {
   averageRating: number
   reviewCount: number
   isVerified: boolean
+  credentialVerified?: boolean
   experience: number
   consultationFee: number
   languages: string[]
@@ -75,6 +76,7 @@ export default function ProfessionalsPage() {
     rating: p.averageRating,
     reviewCount: p.reviewCount,
     verified: p.isVerified,
+    credentialVerified: p.credentialVerified,
     yearsExperience: p.experience,
     consultationFee: p.consultationFee,
     languages: p.languages,

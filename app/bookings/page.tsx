@@ -11,8 +11,11 @@ import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { BackButton } from "@/components/back-button"
 import { toast } from "sonner"
+import { IDD_CONCERN_LABELS, IDD_CONCERNS } from "@/lib/models/Booking"
 
 interface Booking {
   _id: string
@@ -30,6 +33,7 @@ interface Booking {
     location?: string
     consultationFee: number
   }
+  hasReview?: boolean
   caregiverId: {
     _id: string
     name: string
@@ -46,6 +50,8 @@ export default function BookingsPage() {
   const [cancelTarget, setCancelTarget] = useState<{ id: string; name: string } | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [completeTarget, setCompleteTarget] = useState<string | null>(null)  // bookingId pending completion
+  const [confirmedConcern, setConfirmedConcern] = useState("")
 
   useEffect(() => {
     if (!loading && !user) router.push("/login")
@@ -93,13 +99,13 @@ export default function BookingsPage() {
     }
   }
 
-  const handleUpdateStatus = async (id: string, status: "confirmed" | "cancelled" | "completed") => {
+  const handleUpdateStatus = async (id: string, status: "confirmed" | "cancelled" | "completed", concern?: string) => {
     setUpdatingId(id)
     try {
       const res = await fetch(`/api/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, ...(concern ? { confirmedConcern: concern } : {}) }),
       })
       if (res.ok) {
         const labels = { confirmed: "Appointment confirmed", cancelled: "Appointment declined", completed: "Marked as completed" }
@@ -111,8 +117,21 @@ export default function BookingsPage() {
     }
   }
 
+  const handleMarkComplete = (bookingId: string) => {
+    setConfirmedConcern("")
+    setCompleteTarget(bookingId)
+  }
+
+  const handleSubmitComplete = async () => {
+    if (!completeTarget) return
+    await handleUpdateStatus(completeTarget, "completed", confirmedConcern || undefined)
+    setCompleteTarget(null)
+    setConfirmedConcern("")
+  }
+
   const toCardFormat = (b: Booking) => ({
     id: b._id,
+    professionalId: b.professionalId?._id,
     professionalName: b.professionalId?.name || "Unknown",
     professionalSpecialization: b.professionalId?.specialization || "",
     professionalImage: b.professionalId?.profileImage || null,
@@ -123,6 +142,7 @@ export default function BookingsPage() {
     patientName: b.caregiverId?.name || user?.name || "",
     fee: b.fee,
     notes: b.notes,
+    hasReview: b.hasReview || false,
   })
 
   if (loading || isLoading) {
@@ -282,7 +302,7 @@ export default function BookingsPage() {
                             size="sm"
                             className="h-8 text-xs bg-primary text-primary-foreground"
                             disabled={updatingId === b._id}
-                            onClick={() => handleUpdateStatus(b._id, "completed")}
+                            onClick={() => handleMarkComplete(b._id)}
                           >
                             Mark Complete
                           </Button>
@@ -377,6 +397,47 @@ export default function BookingsPage() {
         onConfirm={handleCancelBooking}
         isLoading={isCancelling}
       />
+
+      {/* Mark Complete — confirmed concern dialog */}
+      <Dialog open={!!completeTarget} onOpenChange={(open) => { if (!open) { setCompleteTarget(null); setConfirmedConcern("") } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mark session as complete</DialogTitle>
+            <DialogDescription>
+              Optionally record the primary concern addressed. This is anonymised and used only for platform research.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Primary concern confirmed <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <select
+                value={confirmedConcern}
+                onChange={e => setConfirmedConcern(e.target.value)}
+                className="w-full border border-input bg-background rounded-md px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="">Select concern category…</option>
+                {IDD_CONCERNS.map(c => (
+                  <option key={c} value={c}>{IDD_CONCERN_LABELS[c]}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button
+              onClick={handleSubmitComplete}
+              disabled={!!updatingId}
+              className="flex-1 bg-primary text-primary-foreground"
+            >
+              {updatingId ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Mark Complete"}
+            </Button>
+            <Button variant="outline" onClick={() => { setCompleteTarget(null); setConfirmedConcern("") }}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

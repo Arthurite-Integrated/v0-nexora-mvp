@@ -11,6 +11,8 @@ import { Star, MapPin, Clock, CheckCircle, Languages, Calendar, Award, Users, Lo
 import Link from "next/link"
 import { BackButton } from "@/components/back-button"
 import { ProfessionalSchema } from "@/components/structured-data"
+import { useAuth } from "@/contexts/AuthContext"
+import { CredentialBadge } from "@/components/credential-badge"
 
 interface Review {
   _id: string
@@ -29,6 +31,7 @@ interface Professional {
   averageRating: number
   reviewCount: number
   isVerified: boolean
+  credentialVerified?: boolean
   experience: number
   consultationFee: number
   languages: string[]
@@ -40,6 +43,8 @@ interface Professional {
 export default function ProfessionalProfilePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { user } = useAuth()
+  const canBook = user?.role === "caregiver"
   const [professional, setProfessional] = useState<Professional | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -124,6 +129,7 @@ export default function ProfessionalProfilePage() {
                     <div className="flex items-start gap-2 mb-2">
                       <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{professional.name}</h1>
                       {professional.isVerified && <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-1" />}
+                      {professional.credentialVerified && <CredentialBadge size={20} className="mt-1" />}
                     </div>
                     <Badge variant="secondary" className="mb-3">{professional.specialization}</Badge>
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
@@ -242,9 +248,19 @@ export default function ProfessionalProfilePage() {
                   <div className="text-3xl font-bold text-primary">₦{professional.consultationFee.toLocaleString()}</div>
                   <p className="text-sm text-muted-foreground mt-1">per 60-min session</p>
                 </div>
-                <Button size="lg" className="w-full bg-primary text-primary-foreground" asChild>
-                  <Link href={`/book/${professional._id}`}>Book Appointment</Link>
-                </Button>
+                {canBook ? (
+                  <Button size="lg" className="w-full bg-primary text-primary-foreground" asChild>
+                    <Link href={`/book/${professional._id}`}>Book Appointment</Link>
+                  </Button>
+                ) : user && !canBook ? (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Only caregivers can book appointments.
+                  </p>
+                ) : (
+                  <Button size="lg" className="w-full bg-primary text-primary-foreground" asChild>
+                    <Link href="/register">Sign up to Book</Link>
+                  </Button>
+                )}
               </CardContent>
             </Card>
 

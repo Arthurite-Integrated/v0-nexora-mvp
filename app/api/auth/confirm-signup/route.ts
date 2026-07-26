@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cognitoConfirmSignUp, cognitoSignIn, cognitoAddUserToGroup } from "@/lib/cognito"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/lib/models/User"
+import { appendSignupToSheet } from "@/lib/notifications"
 
 const isProduction = process.env.NODE_ENV === "production"
 const COOKIE_OPTIONS = {
@@ -46,6 +47,15 @@ export async function POST(req: NextRequest) {
         // non-fatal
       }
     }
+
+    // Fire signup sheet in background — role + location only, no PII
+    const mongoUser = user as { role?: string; location?: string; locationData?: { stateName?: string; countryName?: string }; isSelfAdvocate?: boolean } | null
+    appendSignupToSheet({
+      role: mongoUser?.role || "caregiver",
+      state: mongoUser?.locationData?.stateName || mongoUser?.location?.split(",")?.[1]?.trim() || "",
+      country: mongoUser?.locationData?.countryName || mongoUser?.location?.split(",")?.pop()?.trim() || "Nigeria",
+      isSelfAdvocate: mongoUser?.isSelfAdvocate || false,
+    }).catch(() => {})
 
     const response = NextResponse.json({ message: "Email verified", user }, { status: 200 })
     const maxAge = auth.ExpiresIn || 3600

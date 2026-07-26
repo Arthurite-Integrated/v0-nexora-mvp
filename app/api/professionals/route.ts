@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { Professional } from "@/lib/models/Professional"
 import { requireAuth } from "@/lib/auth-middleware"
+import { appendProfessionalToSheet } from "@/lib/notifications"
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
 
     const total = await Professional.countDocuments(query)
     const professionals = await Professional.find(query)
-      .sort({ isVerified: -1, averageRating: -1, createdAt: -1 })
+      .sort({ credentialVerified: -1, isVerified: -1, averageRating: -1, createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean()
@@ -63,6 +64,18 @@ export async function POST(req: NextRequest) {
         name: user.name,
         ...body,
       })
+
+      appendProfessionalToSheet({
+        name: professional.name,
+        email: professional.email,
+        specialization: professional.specialization,
+        location: professional.location || "",
+        experience: professional.experience,
+        consultationFee: professional.consultationFee,
+        languages: professional.languages,
+        verificationStatus: professional.verificationStatus,
+        credentialVerified: professional.credentialVerified,
+      }).catch(() => {})
 
       return NextResponse.json({ professional }, { status: 201 })
     } catch (err: unknown) {

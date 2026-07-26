@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Star, MapPin, Clock, DollarSign, CheckCircle, Languages } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/contexts/AuthContext"
+import { CredentialBadge } from "@/components/credential-badge"
 
 interface Professional {
   id: string
@@ -13,6 +15,7 @@ interface Professional {
   rating: number
   reviewCount: number
   verified: boolean
+  credentialVerified?: boolean
   yearsExperience: number
   consultationFee: number
   languages: string[]
@@ -24,6 +27,9 @@ interface ProfessionalCardProps {
 }
 
 export function ProfessionalCard({ professional }: ProfessionalCardProps) {
+  const { user } = useAuth()
+  const canBook = user?.role === "caregiver"
+
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="pb-4">
@@ -42,6 +48,7 @@ export function ProfessionalCard({ professional }: ProfessionalCardProps) {
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-xl font-semibold text-gray-900">{professional.name}</h3>
                   {professional.verified && <CheckCircle className="w-5 h-5 text-primary" />}
+                  {professional.credentialVerified && <CredentialBadge size={18} />}
                 </div>
                 <Badge variant="secondary" className="mb-2">
                   {professional.specialization}
@@ -86,12 +93,14 @@ export function ProfessionalCard({ professional }: ProfessionalCardProps) {
 
       <CardContent className="pt-0">
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button asChild className="flex-1">
+          <Button asChild className={canBook ? "flex-1" : "w-full"}>
             <Link href={`/professionals/${professional.id}`}>View Profile</Link>
           </Button>
-          <Button variant="outline" asChild className="flex-1 bg-transparent">
-            <Link href={`/book/${professional.id}`}>Book Consultation</Link>
-          </Button>
+          {canBook && (
+            <Button variant="outline" asChild className="flex-1 bg-transparent">
+              <Link href={`/book/${professional.id}`}>Book Consultation</Link>
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Filter, AlertTriangle, CheckCircle, Clock, X, Loader2 } from "lucide-react"
+import { Search, Filter, AlertTriangle, CheckCircle, Clock, X, Loader2, FileText, ExternalLink } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -43,6 +43,14 @@ export default function AdminVerificationsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("pending")
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [docProfessionals, setDocProfessionals] = useState<Array<{
+    _id: string; name: string; email: string; specialization: string
+    credentialVerified: boolean
+    credentialDocs: Array<{ _id: string; url: string; filename: string; fileType: string; status: string; adminNote?: string }>
+  }>>([])
+  const [docsLoading, setDocsLoading] = useState(false)
+  const [updatingDocId, setUpdatingDocId] = useState<string | null>(null)
+  const [docNote, setDocNote] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "admin")) router.push("/dashboard")
@@ -65,6 +73,46 @@ export default function AdminVerificationsPage() {
   useEffect(() => {
     if (user?.role === "admin") fetchVerifications(activeTab)
   }, [user, activeTab, fetchVerifications])
+
+  // Fetch docs when documents tab is active
+  useEffect(() => {
+    if (activeTab === "documents" && user?.role === "admin") {
+      setDocsLoading(true)
+      fetch("/api/admin/verifications/documents?status=pending")
+        .then(r => r.json())
+        .then(d => setDocProfessionals(d.professionals || []))
+        .catch(() => {})
+        .finally(() => setDocsLoading(false))
+    }
+  }, [activeTab, user])
+
+  const updateDocStatus = async (professionalId: string, docId: string, status: string) => {
+    setUpdatingDocId(docId)
+    try {
+      const res = await fetch("/api/admin/verifications/documents", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ professionalId, docId, status, adminNote: docNote[docId] || undefined }),
+      })
+      if (res.ok) {
+        const labels: Record<string, string> = {
+          approved: "Document approved — credential badge awarded",
+          rejected: "Document rejected",
+          more_info: "More info requested",
+        }
+        toast.success(labels[status] || "Updated")
+        setDocProfessionals(prev => prev.map(p => {
+          if (p._id !== professionalId) return p
+          const updatedDocs = p.credentialDocs.map(d => d._id === docId ? { ...d, status, adminNote: docNote[docId] || d.adminNote } : d)
+          const pendingDocs = updatedDocs.filter(d => d.status === "pending")
+          return { ...p, credentialDocs: pendingDocs, credentialVerified: status === "approved" ? true : p.credentialVerified }
+        }).filter(p => p.credentialDocs.length > 0))
+      } else {
+        toast.error("Failed to update document")
+      }
+    } catch { toast.error("Something went wrong") }
+    finally { setUpdatingDocId(null) }
+  }
 
   const updateStatus = async (id: string, verificationStatus: string) => {
     setUpdatingId(id)
@@ -184,13 +232,17 @@ export default function AdminVerificationsPage() {
           </Card>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="pending">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="pending" className="text-xs sm:text-sm">
                 Pending ({stats.pending})
-                {stats.pending > 0 && <span className="ml-2 w-2 h-2 bg-red-500 rounded-full inline-block" />}
+                {stats.pending > 0 && <span className="ml-1.5 w-2 h-2 bg-red-500 rounded-full inline-block" />}
               </TabsTrigger>
-              <TabsTrigger value="under_review">Under Review ({stats.under_review})</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="under_review" className="text-xs sm:text-sm">Under Review ({stats.under_review})</TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs sm:text-sm">Completed</TabsTrigger>
+              <TabsTrigger value="documents" className="text-xs sm:text-sm">
+                Documents
+                {docProfessionals.length > 0 && <span className="ml-1.5 w-2 h-2 bg-yellow-500 rounded-full inline-block" />}
+              </TabsTrigger>
             </TabsList>
 
             {["pending", "under_review", "completed"].map((tab) => (
@@ -297,6 +349,77 @@ export default function AdminVerificationsPage() {
                 )}
               </TabsContent>
             ))}
+            {/* Documents review tab */}
+            <TabsContent value="documents" className="space-y-4">
+              {docsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : docProfessionals.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="font-medium text-gray-600">No pending credential documents</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                docProfessionals.map(pro => (
+                  <Card key={pro._id}>
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div>
+                          <p className="font-semibold text-foreground">{pro.name}</p>
+                          <p className="text-xs text-muted-foreground">{pro.email} · {pro.specialization}</p>
+                        </div>
+                        {pro.credentialVerified && (
+                          <span className="text-xs text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">Verified</span>
+                        )}
+                      </div>
+                      <div className="space-y-3">
+                        {pro.credentialDocs.map(doc => (
+                          <div key={doc._id} className="border border-border rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <span className="text-sm font-medium truncate flex-1">{doc.filename}</span>
+                              <a href={doc.url} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs text-primary hover:underline shrink-0">
+                                <ExternalLink className="w-3.5 h-3.5" />View
+                              </a>
+                            </div>
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                placeholder="Optional note to professional..."
+                                value={docNote[doc._id] || ""}
+                                onChange={e => setDocNote(prev => ({ ...prev, [doc._id]: e.target.value }))}
+                                className="w-full border border-input rounded-md px-3 py-1.5 text-xs focus:outline-none focus:border-primary"
+                              />
+                              <div className="flex gap-2">
+                                <Button size="sm" className="h-7 px-3 text-xs bg-green-600 hover:bg-green-700 text-white"
+                                  disabled={updatingDocId === doc._id}
+                                  onClick={() => updateDocStatus(pro._id, doc._id, "approved")}>
+                                  {updatingDocId === doc._id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Approve"}
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-7 px-3 text-xs text-yellow-600 border-yellow-300"
+                                  disabled={updatingDocId === doc._id}
+                                  onClick={() => updateDocStatus(pro._id, doc._id, "more_info")}>
+                                  Need More Info
+                                </Button>
+                                <Button size="sm" variant="destructive" className="h-7 px-3 text-xs"
+                                  disabled={updatingDocId === doc._id}
+                                  onClick={() => updateDocStatus(pro._id, doc._id, "rejected")}>
+                                  Reject
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
           </Tabs>
         </div>
       </div>

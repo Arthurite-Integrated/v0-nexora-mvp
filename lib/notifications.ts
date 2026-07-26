@@ -430,3 +430,139 @@ export async function updateSheetBookingStatus(bookingId: string, status: string
     console.error("[notifications] Failed to update sheet status:", err)
   }
 }
+
+// ── Helper: ensure any tab exists with given headers ─────────────────────────
+
+async function ensureTab(tabName: string, headers: string[]) {
+  const sheets = await getSheetsClient()
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${tabName}!A1:1`,
+    })
+    if (!res.data.values?.[0]?.length) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `${tabName}!A1`,
+        valueInputOption: "RAW",
+        requestBody: { values: [headers] },
+      })
+    }
+  } catch {
+    // Tab doesn't exist — create it
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: { requests: [{ addSheet: { properties: { title: tabName } } }] },
+    })
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: `${tabName}!A1`,
+      valueInputOption: "RAW",
+      requestBody: { values: [headers] },
+    })
+  }
+}
+
+// ── Signups sheet ─────────────────────────────────────────────────────────────
+
+const SIGNUP_HEADERS = ["Timestamp", "Role", "State", "Country", "IsSelfAdvocate"]
+
+export async function appendSignupToSheet(data: { role: string; state: string; country: string; isSelfAdvocate: boolean }) {
+  try {
+    const sheets = await getSheetsClient()
+    await ensureTab("Signups", SIGNUP_HEADERS)
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "Signups!A:E",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          new Date().toLocaleString("en-GB"),
+          data.role,
+          data.state,
+          data.country,
+          data.isSelfAdvocate ? "Yes" : "No",
+        ]],
+      },
+    })
+  } catch (err) {
+    console.error("[notifications] Failed to append signup to sheet:", err)
+  }
+}
+
+// ── Professionals sheet ───────────────────────────────────────────────────────
+
+const PROFESSIONAL_HEADERS = [
+  "Timestamp", "Name", "Email", "Specialization", "Location", "Experience (yrs)",
+  "Consultation Fee (₦)", "Languages", "Verification Status", "Credential Verified",
+]
+
+export async function appendProfessionalToSheet(data: {
+  name: string; email: string; specialization: string; location: string
+  experience: number; consultationFee: number; languages: string[]
+  verificationStatus: string; credentialVerified: boolean
+}) {
+  try {
+    const sheets = await getSheetsClient()
+    await ensureTab("Professionals", PROFESSIONAL_HEADERS)
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "Professionals!A:J",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          new Date().toLocaleString("en-GB"),
+          data.name,
+          data.email,
+          data.specialization,
+          data.location,
+          data.experience,
+          data.consultationFee,
+          data.languages.join(", "),
+          data.verificationStatus,
+          data.credentialVerified ? "Yes" : "No",
+        ]],
+      },
+    })
+  } catch (err) {
+    console.error("[notifications] Failed to append professional to sheet:", err)
+  }
+}
+
+// ── ResearchEvents sheet ──────────────────────────────────────────────────────
+
+const RESEARCH_HEADERS = [
+  "Recorded At", "Pseudo Caregiver ID", "Specialization", "State",
+  "Consultation Type", "Outcome", "Session Date", "Presenting Concern", "Confirmed Concern",
+]
+
+export async function appendResearchEventToSheet(data: {
+  pseudoCaregiverId: string; specialization: string; state: string
+  consultationType: string; outcome: string; sessionDate: Date
+  presentingConcern?: string; confirmedConcern?: string
+}) {
+  try {
+    const sheets = await getSheetsClient()
+    await ensureTab("ResearchEvents", RESEARCH_HEADERS)
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "ResearchEvents!A:I",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          new Date().toLocaleString("en-GB"),
+          data.pseudoCaregiverId,
+          data.specialization,
+          data.state,
+          data.consultationType,
+          data.outcome,
+          data.sessionDate.toLocaleDateString("en-GB"),
+          data.presentingConcern || "",
+          data.confirmedConcern || "",
+        ]],
+      },
+    })
+  } catch (err) {
+    console.error("[notifications] Failed to append research event to sheet:", err)
+  }
+}

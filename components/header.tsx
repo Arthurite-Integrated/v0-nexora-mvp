@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X, User, LogOut, Settings } from "lucide-react"
+import { Menu, X, User, LogOut, Settings, Shield } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function Header() {
@@ -63,6 +63,14 @@ export function Header() {
                     Dashboard
                   </Link>
                 </Button>
+                {user?.role === "admin" && (
+                  <Button variant="ghost" asChild>
+                    <Link href="/admin">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Admin Hub
+                    </Link>
+                  </Button>
+                )}
                 <Button variant="ghost" asChild>
                   <Link href="/settings">
                     <Settings className="h-4 w-4 mr-2" />
