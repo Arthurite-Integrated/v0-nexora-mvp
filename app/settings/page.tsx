@@ -46,7 +46,7 @@ interface ProfessionalProfile {
 }
 
 export default function SettingsPage() {
-  const { user, loading, deleteAccount } = useAuth()
+  const { user, loading, refreshUser, deleteAccount } = useAuth()
   const router = useRouter()
 
   // ── Account fields ────────────────────────────────────────────────────────
@@ -144,7 +144,10 @@ export default function SettingsPage() {
         if (d.user.locationData?.country) setLocation(d.user.locationData)
         setProfileImage(d.user.profileImage || "")
       }
-      toast.success("Account saved")
+      // Refresh AuthContext so completion banner re-evaluates immediately
+      await refreshUser()
+      toast.success("Profile saved")
+      router.push("/dashboard")
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to save")
     } finally {
