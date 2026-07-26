@@ -373,11 +373,28 @@ export async function sendProfessionalRejected(professionalEmail: string, profes
 
 // ── Google Sheets ─────────────────────────────────────────────────────────────
 
+function parsePrivateKey(raw: string | undefined): string {
+  if (!raw) return ""
+  // Amplify may store the key with literal \n or with real newlines — handle both
+  let key = raw
+  // If it doesn't contain real newlines but has \n sequences, replace them
+  if (!key.includes("\n")) {
+    key = key.replace(/\\n/g, "\n")
+  }
+  // Ensure the key has proper PEM structure
+  key = key.trim()
+  if (!key.startsWith("-----BEGIN")) {
+    // May be base64-only without headers — unlikely but guard it
+    console.error("[notifications] GOOGLE_PRIVATE_KEY does not start with PEM header")
+  }
+  return key
+}
+
 async function getSheetsClient() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      private_key: parsePrivateKey(process.env.GOOGLE_PRIVATE_KEY),
     },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   })
