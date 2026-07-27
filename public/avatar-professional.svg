@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none">
+  <rect width="96" height="96" fill="#e6f2f0"/>
+  <!-- Torso / coat -->
+  <rect x="28" y="58" width="40" height="26" rx="6" fill="#2d7a6b"/>
+  <!-- Head -->
+  <circle cx="48" cy="38" r="16" fill="#c8a882"/>
+  <!-- Collar -->
+  <path d="M40 58 L48 68 L56 58" fill="white"/>
+  <!-- Stethoscope arc -->
+  <path d="M36 66 Q34 74 40 76 Q46 78 46 72" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <circle cx="46" cy="72" r="2.5" fill="white"/>
+</svg>

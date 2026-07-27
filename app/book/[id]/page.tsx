@@ -96,7 +96,7 @@ export default function BookPage() {
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-muted shrink-0">
-                      <img src={professional.profileImage || "/placeholder.svg"} alt={professional.name} className="w-full h-full object-cover" />
+                      <img src={professional.profileImage || "/avatar-professional.svg"} alt={professional.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1">

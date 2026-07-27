@@ -326,7 +326,7 @@ export default function SettingsPage() {
                   ) : (
                     <form onSubmit={handleSaveAccount} className="space-y-6">
                       <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6">
-                        <ImageUpload value={profileImage} onChange={setProfileImage} folder="profiles" size={96} label="Change photo" />
+                        <ImageUpload value={profileImage} onChange={setProfileImage} folder="profiles" size={96} label="Change photo" role={user?.role} />
                         <div className="flex-1 space-y-1 text-center sm:text-left pt-1">
                           <p className="font-semibold text-foreground">{user?.name}</p>
                           <p className="text-sm text-muted-foreground">{user?.email}</p>

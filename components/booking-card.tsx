@@ -68,7 +68,7 @@ export function BookingCard({ booking, onCancel, onReviewed }: BookingCardProps)
           <div className="flex items-start gap-3 mb-4">
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
               <img
-                src={booking.professionalImage || "/placeholder.svg"}
+                src={booking.professionalImage || "/avatar-professional.svg"}
                 alt={booking.professionalName}
                 className="w-full h-full object-cover"
               />

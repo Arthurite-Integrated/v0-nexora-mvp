@@ -13,6 +13,7 @@ import { BackButton } from "@/components/back-button"
 import { ProfessionalSchema } from "@/components/structured-data"
 import { useAuth } from "@/contexts/AuthContext"
 import { CredentialBadge } from "@/components/credential-badge"
+import { UserAvatar } from "@/components/user-avatar"
 
 interface Review {
   _id: string
@@ -122,9 +123,20 @@ export default function ProfessionalProfilePage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row gap-5">
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg overflow-hidden shrink-0 bg-muted">
-                    <img src={professional.profileImage || "/placeholder.svg"} alt={professional.name} className="w-full h-full object-cover" />
-                  </div>
+                  <UserAvatar
+                    src={professional.profileImage}
+                    name={professional.name}
+                    role="professional"
+                    size={128}
+                    className="rounded-lg hidden sm:block"
+                  />
+                  <UserAvatar
+                    src={professional.profileImage}
+                    name={professional.name}
+                    role="professional"
+                    size={96}
+                    className="rounded-lg sm:hidden"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2 mb-2">
                       <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{professional.name}</h1>

@@ -130,7 +130,7 @@ export function CaregiverDashboard({ user }: CaregiverDashboardProps) {
                   <div key={booking._id} className="flex items-center gap-4 p-4 border rounded-lg">
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
                       <img
-                        src={booking.professionalId?.profileImage || "/placeholder.svg"}
+                        src={booking.professionalId?.profileImage || "/avatar-professional.svg"}
                         alt={booking.professionalId?.name || ""}
                         className="w-full h-full object-cover"
                       />

@@ -12,6 +12,7 @@ interface ImageUploadProps {
   shape?: "circle" | "square"
   size?: number
   label?: string
+  role?: string
 }
 
 export function ImageUpload({
@@ -21,6 +22,7 @@ export function ImageUpload({
   shape = "circle",
   size = 96,
   label = "Upload photo",
+  role,
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState("")
@@ -87,7 +89,12 @@ export function ImageUpload({
             className={`object-cover ${radiusClass}`}
           />
         ) : (
-          <Camera className="w-8 h-8 text-gray-400" />
+          <Image
+            src={role === "professional" ? "/avatar-professional.svg" : "/avatar-caregiver.svg"}
+            alt="Default avatar"
+            fill
+            className={`object-cover ${radiusClass} opacity-60`}
+          />
         )}
 
         {isUploading && (

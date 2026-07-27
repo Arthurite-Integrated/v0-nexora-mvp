@@ -5,6 +5,7 @@ import { Star, MapPin, Clock, DollarSign, CheckCircle, Languages } from "lucide-
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { CredentialBadge } from "@/components/credential-badge"
+import { UserAvatar } from "@/components/user-avatar"
 
 interface Professional {
   id: string
@@ -34,13 +35,13 @@ export function ProfessionalCard({ professional }: ProfessionalCardProps) {
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-            <img
-              src={professional.image || "/placeholder.svg"}
-              alt={professional.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
+          <UserAvatar
+            src={professional.image}
+            name={professional.name}
+            role="professional"
+            size={96}
+            className="rounded-lg"
+          />
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between mb-2">
