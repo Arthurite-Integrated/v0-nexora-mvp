@@ -12,7 +12,7 @@ import {
   CARE_RELATIONSHIPS, CARE_RELATIONSHIP_LABELS,
   PATIENT_AGE_GROUPS, PATIENT_AGE_GROUP_LABELS,
   DIAGNOSIS_STATUSES, DIAGNOSIS_STATUS_LABELS,
-} from "@/lib/models/User"
+} from "@/lib/constants/care-profile"
 
 type Relationship = typeof CARE_RELATIONSHIPS[number]
 type AgeGroup = typeof PATIENT_AGE_GROUPS[number]
