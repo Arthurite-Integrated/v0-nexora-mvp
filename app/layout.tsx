@@ -8,7 +8,6 @@ import { Header } from "@/components/header"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { CookieConsentProvider } from "@/contexts/CookieConsentContext"
 import { CookieBanner } from "@/components/cookie-banner"
-import { ConditionalAnalytics } from "@/components/analytics-provider"
 import { GoogleAnalytics } from "@/components/google-analytics"
 import { OrganizationSchema, WebsiteSchema } from "@/components/structured-data"
 import { Toaster } from "sonner"
@@ -90,7 +89,6 @@ export default function RootLayout({
             <FloatingChatbot />
             <CookieBanner />
           </AuthProvider>
-          <ConditionalAnalytics />
         </CookieConsentProvider>
         <GoogleAnalytics />
         <Toaster
