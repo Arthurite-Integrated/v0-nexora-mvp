@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
+import { ShieldCheck, BadgeCheck } from "lucide-react"
 import { SPECIALIZATIONS } from "@/lib/constants/specializations"
 
 const LOCATIONS = ["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan", "Enugu", "Kaduna", "Jos"]
@@ -141,21 +142,33 @@ export function ProfessionalFilters({ filters, onChange, onClear }: Professional
           <CardTitle className="text-sm font-semibold">Verification</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2.5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2">
             <Checkbox
               id="verified-only"
               checked={filters.verifiedOnly}
               onCheckedChange={v => set({ verifiedOnly: !!v })}
+              className="mt-0.5"
             />
-            <Label htmlFor="verified-only" className="text-xs font-normal cursor-pointer">Platform verified</Label>
+            <Label htmlFor="verified-only" className="text-xs font-normal cursor-pointer space-y-0.5">
+              <span className="flex items-center gap-1 font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" />Platform Verified
+              </span>
+              <span className="text-muted-foreground">Identity reviewed by Nexora</span>
+            </Label>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2">
             <Checkbox
               id="cred-verified"
               checked={filters.credentialVerifiedOnly}
               onCheckedChange={v => set({ credentialVerifiedOnly: !!v })}
+              className="mt-0.5"
             />
-            <Label htmlFor="cred-verified" className="text-xs font-normal cursor-pointer">Credential verified (green tick)</Label>
+            <Label htmlFor="cred-verified" className="text-xs font-normal cursor-pointer space-y-0.5">
+              <span className="flex items-center gap-1 font-medium">
+                <BadgeCheck className="w-3.5 h-3.5 text-emerald-500" />Credentials Verified
+              </span>
+              <span className="text-muted-foreground">Degrees &amp; licences confirmed</span>
+            </Label>
           </div>
         </CardContent>
       </Card>
