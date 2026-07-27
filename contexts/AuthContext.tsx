@@ -20,6 +20,11 @@ export interface AuthUser {
   }
   profileImage?: string
   isSelfAdvocate?: boolean
+  careProfile?: {
+    relationship: string
+    patientAgeGroup: string
+    diagnosisStatus: string
+  }
 }
 
 interface AuthContextType {

@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
     const updateFields: Record<string, unknown> = {}
     if (location) updateFields.location = location
     if (locationData?.country) updateFields.locationData = locationData
-    if (isSelfAdvocate) updateFields.isSelfAdvocate = true
 
     const user = Object.keys(updateFields).length > 0
       ? await User.findOneAndUpdate(
@@ -61,11 +60,19 @@ export async function POST(req: NextRequest) {
 
     // Now write the sheet with the fully updated user data
     const mongoUser = user as { role?: string; location?: string; locationData?: { stateName?: string; countryName?: string }; isSelfAdvocate?: boolean } | null
+    const fullUser = mongoUser as {
+      role?: string; location?: string
+      locationData?: { stateName?: string; countryName?: string }
+      careProfile?: { relationship?: string; patientAgeGroup?: string; diagnosisStatus?: string }
+    } | null
     await appendSignupToSheet({
-      role: mongoUser?.role || "caregiver",
-      state: mongoUser?.locationData?.stateName || mongoUser?.location?.split(",")?.[1]?.trim() || "",
-      country: mongoUser?.locationData?.countryName || mongoUser?.location?.split(",")?.pop()?.trim() || "Nigeria",
-      isSelfAdvocate: mongoUser?.isSelfAdvocate || false,
+      role: fullUser?.role || "caregiver",
+      state: fullUser?.locationData?.stateName || fullUser?.location?.split(",")?.[1]?.trim() || "",
+      country: fullUser?.locationData?.countryName || fullUser?.location?.split(",")?.pop()?.trim() || "Nigeria",
+      // careProfile filled later on caregiver onboarding — empty strings at signup time
+      relationship: fullUser?.careProfile?.relationship || "",
+      patientAgeGroup: fullUser?.careProfile?.patientAgeGroup || "",
+      diagnosisStatus: fullUser?.careProfile?.diagnosisStatus || "",
     }).catch(err => console.error("[confirm-signup] sheet error:", err))
 
     const response = NextResponse.json({ message: "Email verified", user }, { status: 200 })

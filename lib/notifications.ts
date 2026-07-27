@@ -561,15 +561,18 @@ async function ensureTab(tabName: string, headers: string[]) {
 
 // ── Signups sheet ─────────────────────────────────────────────────────────────
 
-const SIGNUP_HEADERS = ["Timestamp", "Role", "State", "Country", "IsSelfAdvocate"]
+const SIGNUP_HEADERS = ["Timestamp", "Role", "State", "Country", "Relationship", "PatientAgeGroup", "DiagnosisStatus"]
 
-export async function appendSignupToSheet(data: { role: string; state: string; country: string; isSelfAdvocate: boolean }) {
+export async function appendSignupToSheet(data: {
+  role: string; state: string; country: string
+  relationship?: string; patientAgeGroup?: string; diagnosisStatus?: string
+}) {
   try {
     const sheets = await getSheetsClient()
     await ensureTab("Signups", SIGNUP_HEADERS)
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: "Signups!A:E",
+      range: "Signups!A:G",
       valueInputOption: "RAW",
       requestBody: {
         values: [[
@@ -577,12 +580,45 @@ export async function appendSignupToSheet(data: { role: string; state: string; c
           data.role,
           data.state,
           data.country,
-          data.isSelfAdvocate ? "Yes" : "No",
+          data.relationship || "",
+          data.patientAgeGroup || "",
+          data.diagnosisStatus || "",
         ]],
       },
     })
   } catch (err) {
     console.error("[notifications] Failed to append signup to sheet:", err)
+  }
+}
+
+// ── Update signup row with careProfile (called after caregiver onboarding) ────
+// Finds the row by email in column D (Caregiver Email) — searches last 200 rows
+export async function updateSignupSheetCareProfile(data: {
+  email: string; relationship: string; patientAgeGroup: string; diagnosisStatus: string
+}) {
+  try {
+    const sheets = await getSheetsClient()
+    // Signups columns: A=Timestamp B=Role C=State D=Country E=Relationship F=PatientAgeGroup G=DiagnosisStatus
+    // We don't store email in Signups (privacy) — update the most recent row for this signup session
+    // Instead, just append a new update row with the care profile data filled in
+    // This is simpler and doesn't risk matching the wrong row
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "Signups!A:G",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          new Date().toLocaleString("en-GB"),
+          "caregiver_profile_update",
+          "", "",
+          data.relationship,
+          data.patientAgeGroup,
+          data.diagnosisStatus,
+        ]],
+      },
+    })
+  } catch (err) {
+    console.error("[notifications] Failed to update signup care profile:", err)
   }
 }
 

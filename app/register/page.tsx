@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Eye, EyeOff, Mail, Lock, User, CheckCircle, Loader2, Heart, AlertCircle } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User, CheckCircle, Loader2, AlertCircle } from "lucide-react"
 import { ImageUpload } from "@/components/image-upload"
 import { LocationPicker, locationToString, type LocationValue } from "@/components/location-picker"
 import { PasswordStrength, isPasswordValid } from "@/components/password-strength"
@@ -42,7 +42,6 @@ export default function RegisterPage() {
     password: "",
     confirmPassword: "",
     role: "caregiver" as UserRole,
-    isSelfAdvocate: false,
   })
 
   const [location, setLocation] = useState<LocationValue>(EMPTY_LOCATION)
@@ -133,7 +132,6 @@ export default function RegisterPage() {
           // Pass these so confirm-signup saves them and writes the sheet correctly
           location: locString || undefined,
           locationData: location.country ? location : undefined,
-          isSelfAdvocate: formData.isSelfAdvocate || undefined,
         }),
       })
       const data = await res.json()
@@ -189,6 +187,8 @@ export default function RegisterPage() {
 
     if (formData.role === "professional") {
       router.push("/onboarding")
+    } else if (formData.role === "caregiver") {
+      router.push("/caregiver-onboarding")
     } else {
       router.push("/dashboard")
     }
@@ -249,7 +249,7 @@ export default function RegisterPage() {
                   <Label>I am a...</Label>
                   <RadioGroup
                     value={formData.role}
-                    onValueChange={(v) => setFormData((p) => ({ ...p, role: v as UserRole, isSelfAdvocate: false }))}
+                    onValueChange={(v) => setFormData((p) => ({ ...p, role: v as UserRole }))}
                     className="grid grid-cols-1 gap-2"
                   >
                     <div className={`flex items-start space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${formData.role === "caregiver" ? "border-primary/40 bg-primary/5" : "border-border hover:border-primary/20"}`}>
@@ -278,32 +278,6 @@ export default function RegisterPage() {
                   </RadioGroup>
                 </div>
 
-                {/* Self-advocate option — only shown for caregivers */}
-                {formData.role === "caregiver" && (
-                  <div
-                    onClick={() => setFormData(p => ({ ...p, isSelfAdvocate: !p.isSelfAdvocate }))}
-                    className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                      formData.isSelfAdvocate
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border hover:border-primary/20"
-                    }`}
-                  >
-                    <div className={`mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                      formData.isSelfAdvocate ? "bg-primary border-primary" : "border-muted-foreground"
-                    }`}>
-                      {formData.isSelfAdvocate && <CheckCircle className="w-3 h-3 text-white" />}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">I am seeking care for myself</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        I have an intellectual or developmental disability and I am looking for professionals to support me directly.
-                        Your experience on Nexora will be personalised for you.
-                      </p>
-                    </div>
-                  </div>
-                )}
 
                 {/* Basic info */}
                 <div className="space-y-4">
