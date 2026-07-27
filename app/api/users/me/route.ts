@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth-middleware"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/lib/models/User"
-import { updateSignupSheetCareProfile } from "@/lib/notifications"
+import { appendSignupToSheet } from "@/lib/notifications"
 
 export async function GET(req: NextRequest) {
   return requireAuth(req, async (_, user) => {
@@ -33,14 +33,17 @@ export async function PATCH(req: NextRequest) {
         careProfile?: { relationship?: string; patientAgeGroup?: string; diagnosisStatus?: string }
       } | null
 
-      // If careProfile was just completed, update the signup sheet row
-      if (body.careProfile?.relationship && updated) {
-        await updateSignupSheetCareProfile({
-          email: user.email,
+      // When caregiver completes their care profile onboarding, write the complete signup row
+      // (location + careProfile in one row, no separate update row needed)
+      if (body.careProfile?.relationship && updated && user.role === "caregiver") {
+        await appendSignupToSheet({
+          role: "caregiver",
+          state: updated.locationData?.stateName || updated.location?.split(",")?.[1]?.trim() || "",
+          country: updated.locationData?.countryName || updated.location?.split(",")?.pop()?.trim() || "Nigeria",
           relationship: updated.careProfile?.relationship || "",
           patientAgeGroup: updated.careProfile?.patientAgeGroup || "",
           diagnosisStatus: updated.careProfile?.diagnosisStatus || "",
-        }).catch(err => console.error("[users/me PATCH] sheet update error:", err))
+        }).catch(err => console.error("[users/me PATCH] sheet error:", err))
       }
 
       return NextResponse.json({ user: updated })

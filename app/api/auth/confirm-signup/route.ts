@@ -58,22 +58,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Now write the sheet with the fully updated user data
-    const mongoUser = user as { role?: string; location?: string; locationData?: { stateName?: string; countryName?: string }; isSelfAdvocate?: boolean } | null
-    const fullUser = mongoUser as {
+    // Only write the signup sheet immediately for professionals and admins.
+    // Caregivers are written after they complete the care profile onboarding step,
+    // so the single row contains both location AND careProfile data.
+    const fullUser = user as {
       role?: string; location?: string
       locationData?: { stateName?: string; countryName?: string }
-      careProfile?: { relationship?: string; patientAgeGroup?: string; diagnosisStatus?: string }
     } | null
-    await appendSignupToSheet({
-      role: fullUser?.role || "caregiver",
-      state: fullUser?.locationData?.stateName || fullUser?.location?.split(",")?.[1]?.trim() || "",
-      country: fullUser?.locationData?.countryName || fullUser?.location?.split(",")?.pop()?.trim() || "Nigeria",
-      // careProfile filled later on caregiver onboarding — empty strings at signup time
-      relationship: fullUser?.careProfile?.relationship || "",
-      patientAgeGroup: fullUser?.careProfile?.patientAgeGroup || "",
-      diagnosisStatus: fullUser?.careProfile?.diagnosisStatus || "",
-    }).catch(err => console.error("[confirm-signup] sheet error:", err))
+    if (fullUser?.role !== "caregiver") {
+      await appendSignupToSheet({
+        role: fullUser?.role || "professional",
+        state: fullUser?.locationData?.stateName || fullUser?.location?.split(",")?.[1]?.trim() || "",
+        country: fullUser?.locationData?.countryName || fullUser?.location?.split(",")?.pop()?.trim() || "Nigeria",
+      }).catch(err => console.error("[confirm-signup] sheet error:", err))
+    }
 
     const response = NextResponse.json({ message: "Email verified", user }, { status: 200 })
     const maxAge = auth.ExpiresIn || 3600

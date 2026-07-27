@@ -515,8 +515,10 @@ async function ensureTab(tabName: string, headers: string[]) {
       spreadsheetId: SHEET_ID,
       range: `${tabName}!A1:1`,
     })
-    if (!res.data.values?.[0]?.length) {
-      // Tab exists but has no header — write headers
+    const existingHeaders = res.data.values?.[0] || []
+    // Write headers if missing OR if they don't match (schema changed)
+    const headersMatch = headers.every((h, i) => existingHeaders[i] === h) && existingHeaders.length === headers.length
+    if (!headersMatch) {
       await sheets.spreadsheets.values.update({
         spreadsheetId: SHEET_ID,
         range: `${tabName}!A1`,
@@ -524,7 +526,7 @@ async function ensureTab(tabName: string, headers: string[]) {
         requestBody: { values: [headers] },
       })
     }
-    return // tab exists and has headers — done
+    return // tab exists and has correct headers — done
   } catch (err: unknown) {
     const e = err as { code?: number; message?: string }
     if (e?.code === 400 || (e?.message && e.message.includes("Unable to parse range"))) {
@@ -588,37 +590,6 @@ export async function appendSignupToSheet(data: {
     })
   } catch (err) {
     console.error("[notifications] Failed to append signup to sheet:", err)
-  }
-}
-
-// ── Update signup row with careProfile (called after caregiver onboarding) ────
-// Finds the row by email in column D (Caregiver Email) — searches last 200 rows
-export async function updateSignupSheetCareProfile(data: {
-  email: string; relationship: string; patientAgeGroup: string; diagnosisStatus: string
-}) {
-  try {
-    const sheets = await getSheetsClient()
-    // Signups columns: A=Timestamp B=Role C=State D=Country E=Relationship F=PatientAgeGroup G=DiagnosisStatus
-    // We don't store email in Signups (privacy) — update the most recent row for this signup session
-    // Instead, just append a new update row with the care profile data filled in
-    // This is simpler and doesn't risk matching the wrong row
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SHEET_ID,
-      range: "Signups!A:G",
-      valueInputOption: "RAW",
-      requestBody: {
-        values: [[
-          new Date().toLocaleString("en-GB"),
-          "caregiver_profile_update",
-          "", "",
-          data.relationship,
-          data.patientAgeGroup,
-          data.diagnosisStatus,
-        ]],
-      },
-    })
-  } catch (err) {
-    console.error("[notifications] Failed to update signup care profile:", err)
   }
 }
 
