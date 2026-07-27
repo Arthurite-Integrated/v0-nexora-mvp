@@ -122,28 +122,24 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError("")
     try {
+      const locString = locationToString(location)
       const res = await fetch("/api/auth/confirm-signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email, code, password: passwordRef.current }),
+        body: JSON.stringify({
+          email: formData.email,
+          code,
+          password: passwordRef.current,
+          // Pass these so confirm-signup saves them and writes the sheet correctly
+          location: locString || undefined,
+          locationData: location.country ? location : undefined,
+          isSelfAdvocate: formData.isSelfAdvocate || undefined,
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || "Verification failed. Please try again.")
         return
-      }
-
-      // Save location + self-advocate flag right after verification
-      const locString = locationToString(location)
-      if (locString || formData.isSelfAdvocate) {
-        await fetch("/api/users/me", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...(locString && { location: locString, locationData: location }),
-            ...(formData.isSelfAdvocate && { isSelfAdvocate: true }),
-          }),
-        })
       }
 
       await refreshUser()

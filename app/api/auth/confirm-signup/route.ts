@@ -14,7 +14,7 @@ const COOKIE_OPTIONS = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, code, password } = await req.json()
+    const { email, code, password, location, locationData, isSelfAdvocate } = await req.json()
 
     if (!email || !code || !password) {
       return NextResponse.json({ error: "Email, code, and password are required" }, { status: 400 })
@@ -31,9 +31,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Confirmed but sign-in failed — please sign in manually" }, { status: 500 })
     }
 
-    // Fetch MongoDB user to add them to the correct Cognito group
+    // Fetch MongoDB user + save location/isSelfAdvocate in the same request
     await connectDB()
-    const user = await User.findOne({ email: email.toLowerCase() }).lean() as { role?: string } | null
+    const updateFields: Record<string, unknown> = {}
+    if (location) updateFields.location = location
+    if (locationData?.country) updateFields.locationData = locationData
+    if (isSelfAdvocate) updateFields.isSelfAdvocate = true
+
+    const user = Object.keys(updateFields).length > 0
+      ? await User.findOneAndUpdate(
+          { email: email.toLowerCase() },
+          { $set: updateFields },
+          { new: true }
+        ).lean() as { role?: string; location?: string; locationData?: { stateName?: string; countryName?: string }; isSelfAdvocate?: boolean } | null
+      : await User.findOne({ email: email.toLowerCase() }).lean() as { role?: string } | null
 
     if (user?.role) {
       const groupMap: Record<string, string> = {
@@ -48,7 +59,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Await sheet write — Lambda kills fire-and-forget promises after response
+    // Now write the sheet with the fully updated user data
     const mongoUser = user as { role?: string; location?: string; locationData?: { stateName?: string; countryName?: string }; isSelfAdvocate?: boolean } | null
     await appendSignupToSheet({
       role: mongoUser?.role || "caregiver",
