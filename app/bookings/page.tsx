@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Label } from "@/components/ui/label"
 import { BackButton } from "@/components/back-button"
 import { toast } from "sonner"
-import { IDD_CONCERN_LABELS, IDD_CONCERNS } from "@/lib/models/Booking"
+import { IDD_CONCERN_LABELS, IDD_CONCERNS } from "@/lib/constants/idd-concerns"
 
 interface Booking {
   _id: string

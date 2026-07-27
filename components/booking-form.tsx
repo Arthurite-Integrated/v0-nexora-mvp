@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Calendar, Clock, CheckCircle, Loader2, ChevronRight, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { IDD_CONCERN_LABELS, IDD_CONCERNS } from "@/lib/models/Booking"
+import { IDD_CONCERN_LABELS, IDD_CONCERNS } from "@/lib/constants/idd-concerns"
 
 interface AvailabilitySlot {
   day: string

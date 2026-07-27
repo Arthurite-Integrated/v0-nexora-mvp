@@ -1,5 +1,5 @@
 import { Schema, model, models, Document } from "mongoose"
-import { IDD_CONCERNS, IDDConcern } from "./Booking"
+import { IDD_CONCERNS, IDDConcern } from "@/lib/constants/idd-concerns"
 
 /**
  * Pseudonymised, non-identifiable research record.
