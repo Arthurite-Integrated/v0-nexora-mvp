@@ -259,7 +259,7 @@ export default function RegisterPage() {
                           Caregiver / Family Member
                         </Label>
                         <p className="text-sm text-muted-foreground mt-0.5">
-                          Looking for healthcare professionals for a loved one
+                          Looking for healthcare professionals for a loved one or myself
                         </p>
                       </div>
                     </div>
