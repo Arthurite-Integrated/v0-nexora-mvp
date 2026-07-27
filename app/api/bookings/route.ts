@@ -106,12 +106,14 @@ export async function POST(req: NextRequest) {
         notes,
       }
 
-      // Fire emails + sheet in background — don't await so response is fast
-      Promise.all([
-        sendBookingRequestedCaregiver(emailData),
-        sendBookingRequestedProfessional(emailData),
-        appendBookingToSheet(emailData),
-      ]).catch(err => console.error("[bookings/POST] notification error:", err))
+      // Sheet must be awaited — Lambda kills background promises after response
+      await appendBookingToSheet(emailData).catch(err =>
+        console.error("[bookings/POST] sheet error:", err)
+      )
+
+      // Emails can fire last — non-critical for data integrity
+      sendBookingRequestedCaregiver(emailData).catch(() => {})
+      sendBookingRequestedProfessional(emailData).catch(() => {})
 
       return NextResponse.json({ booking }, { status: 201 })
     } catch (err: unknown) {

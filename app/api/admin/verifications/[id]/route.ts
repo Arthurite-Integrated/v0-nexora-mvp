@@ -34,10 +34,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         const email = proUser?.email || professional.email
         const name = professional.name
 
-        Promise.resolve().then(() =>
-          verificationStatus === "verified"
-            ? sendProfessionalApproved(email, name)
-            : sendProfessionalRejected(email, name)
+        await (verificationStatus === "verified"
+          ? sendProfessionalApproved(email, name)
+          : sendProfessionalRejected(email, name)
         ).catch(err => console.error("[verifications/PATCH] email error:", err))
       }
 

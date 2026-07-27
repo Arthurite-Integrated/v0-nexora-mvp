@@ -101,15 +101,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
             notes: populatedBooking.notes,
           }
 
-          Promise.all([
-            status === "confirmed"
-              ? sendBookingConfirmedCaregiver(emailData)
-              : sendBookingDeclinedCaregiver(emailData),
-            updateSheetBookingStatus(params.id, status),
-          ]).catch(err => console.error("[bookings/PATCH] notification error:", err))
+          // Sheet must be awaited before Lambda returns
+          await updateSheetBookingStatus(params.id, status).catch(err =>
+            console.error("[bookings/PATCH] sheet error:", err)
+          )
+          // Email in background — non-critical
+          const emailFn = status === "confirmed" ? sendBookingConfirmedCaregiver : sendBookingDeclinedCaregiver
+          emailFn(emailData).catch(() => {})
         }
       } else if (status !== previousStatus) {
-        updateSheetBookingStatus(params.id, status).catch(() => {})
+        await updateSheetBookingStatus(params.id, status).catch(() => {})
       }
 
       // ── ResearchEvent on terminal states ─────────────────────────────────
@@ -156,7 +157,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
               { upsert: true, new: true }
             )
 
-            appendResearchEventToSheet(researchDoc).catch(() => {})
+            await appendResearchEventToSheet(researchDoc).catch(err =>
+              console.error("[bookings/PATCH] research sheet error:", err)
+            )
           }
         } catch (researchErr) {
           console.error("[bookings/PATCH] ResearchEvent error:", researchErr)

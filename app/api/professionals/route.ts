@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         ...body,
       })
 
-      appendProfessionalToSheet({
+      await appendProfessionalToSheet({
         name: professional.name,
         email: professional.email,
         specialization: professional.specialization,
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
         languages: professional.languages,
         verificationStatus: professional.verificationStatus,
         credentialVerified: professional.credentialVerified,
-      }).catch(() => {})
+      }).catch(err => console.error("[professionals/POST] sheet error:", err))
 
       return NextResponse.json({ professional }, { status: 201 })
     } catch (err: unknown) {

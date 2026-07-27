@@ -48,14 +48,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Fire signup sheet in background — role + location only, no PII
+    // Await sheet write — Lambda kills fire-and-forget promises after response
     const mongoUser = user as { role?: string; location?: string; locationData?: { stateName?: string; countryName?: string }; isSelfAdvocate?: boolean } | null
-    appendSignupToSheet({
+    await appendSignupToSheet({
       role: mongoUser?.role || "caregiver",
       state: mongoUser?.locationData?.stateName || mongoUser?.location?.split(",")?.[1]?.trim() || "",
       country: mongoUser?.locationData?.countryName || mongoUser?.location?.split(",")?.pop()?.trim() || "Nigeria",
       isSelfAdvocate: mongoUser?.isSelfAdvocate || false,
-    }).catch(() => {})
+    }).catch(err => console.error("[confirm-signup] sheet error:", err))
 
     const response = NextResponse.json({ message: "Email verified", user }, { status: 200 })
     const maxAge = auth.ExpiresIn || 3600
