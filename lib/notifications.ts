@@ -669,3 +669,28 @@ export async function appendResearchEventToSheet(data: {
     console.error("[notifications] Failed to append research event to sheet:", err)
   }
 }
+
+// ── Newsletter subscribers sheet ──────────────────────────────────────────────
+
+const NEWSLETTER_HEADERS = ["Timestamp", "Email", "Source"]
+
+export async function appendNewsletterToSheet(data: { email: string; source?: string }) {
+  try {
+    const sheets = await getSheetsClient()
+    await ensureTab("Newsletter", NEWSLETTER_HEADERS)
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "Newsletter!A:C",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          new Date().toLocaleString("en-GB"),
+          data.email,
+          data.source || "resources_page",
+        ]],
+      },
+    })
+  } catch (err) {
+    console.error("[notifications] Failed to append newsletter subscriber to sheet:", err)
+  }
+}

@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { BookOpen, Users, Stethoscope, Calendar, Clock, ChevronRight, Mail } from "lucide-react"
+import { BookOpen, Users, Stethoscope, Calendar, Clock, ChevronRight } from "lucide-react"
+import { NewsletterWidget } from "@/components/newsletter-widget"
 import Link from "next/link"
 import { BackButton } from "@/components/back-button"
 import Image from "next/image"
@@ -288,27 +288,7 @@ export default async function ResourcesPage() {
                 </Card>
               )}
 
-              {/* Newsletter — redesigned */}
-              <div className="rounded-xl border border-gray-200 bg-white p-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <Mail className="w-4 h-4 text-primary" />
-                  <h3 className="font-semibold text-gray-900 text-sm">Stay Updated</h3>
-                </div>
-                <p className="text-gray-500 text-xs mb-4 leading-relaxed">
-                  Get the latest articles and IDD care resources delivered to your inbox — no spam.
-                </p>
-                <div className="space-y-2">
-                  <Input
-                    type="email"
-                    placeholder="your@email.com"
-                    className="text-sm h-9 border-gray-200 focus:border-primary"
-                  />
-                  <Button className="w-full h-9 text-sm bg-primary hover:bg-primary text-white font-medium">
-                    Subscribe
-                  </Button>
-                </div>
-                <p className="text-gray-400 text-xs mt-3 text-center">Unsubscribe anytime.</p>
-              </div>
+              <NewsletterWidget source="resources_page" />
 
               {posts.length > 0 && (
                 <Card>
