@@ -268,9 +268,11 @@ export function ProfessionalDashboard({ user }: ProfessionalDashboardProps) {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button className="w-full justify-start bg-transparent" variant="outline">
-                <Settings className="w-4 h-4 mr-2" />
-                Update Profile
+              <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
+                <Link href="/settings">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Update Profile
+                </Link>
               </Button>
               <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
                 <Link href="/bookings">

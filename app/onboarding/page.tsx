@@ -183,9 +183,14 @@ export default function OnboardingPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        const msg = data.error || "Failed to save profile. Please try again."
-        
-        toast.error(msg)
+        // If profile already exists (e.g. coming back after partial completion), redirect to settings
+        if (res.status === 409) {
+          toast.info("You already have a professional profile. Redirecting to settings.")
+          await refreshUser()
+          router.push("/settings")
+          return
+        }
+        toast.error(data.error || "Failed to save profile. Please try again.")
         return
       }
       toast.success("Profile submitted for verification!")
@@ -611,6 +616,17 @@ export default function OnboardingPage() {
                     : "Submit Profile"}
                 </Button>
               )}
+            </div>
+
+            {/* Always-visible escape hatch */}
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Finish later — go to dashboard
+              </button>
             </div>
           </CardContent>
         </Card>
