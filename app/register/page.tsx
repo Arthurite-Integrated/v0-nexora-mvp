@@ -330,6 +330,9 @@ export default function RegisterPage() {
                         {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                    {formData.confirmPassword && formData.confirmPassword !== formData.password && (
+                      <p className="text-xs text-destructive mt-1">Passwords do not match</p>
+                    )}
                   </div>
 
                   {/* Location */}

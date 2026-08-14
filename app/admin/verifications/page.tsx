@@ -25,6 +25,7 @@ interface Professional {
   languages: string[]
   verificationStatus: "pending" | "under_review" | "verified" | "rejected"
   isVerified: boolean
+  credentialVerified: boolean
   createdAt: string
 }
 
@@ -96,7 +97,7 @@ export default function AdminVerificationsPage() {
       })
       if (res.ok) {
         const labels: Record<string, string> = {
-          approved: "Document approved — credential badge awarded",
+          approved: "Credential document approved - badge awarded",
           rejected: "Document rejected",
           more_info: "More info requested",
         }
@@ -115,6 +116,14 @@ export default function AdminVerificationsPage() {
   }
 
   const updateStatus = async (id: string, verificationStatus: string) => {
+    const professional = professionals.find((p) => p._id === id)
+    if (verificationStatus === "verified" && professional && !professional.credentialVerified) {
+      const shouldContinue = window.confirm(
+        "This professional has no approved credential documents yet. Approving now will mark their profile as platform reviewed only, not credentials verified."
+      )
+      if (!shouldContinue) return
+    }
+
     setUpdatingId(id)
     try {
       const res = await fetch(`/api/admin/verifications/${id}`, {
@@ -124,7 +133,7 @@ export default function AdminVerificationsPage() {
       })
       if (res.ok) {
         const labels: Record<string, string> = {
-          verified: "Professional approved ✓",
+          verified: "Profile approved",
           rejected: "Application rejected",
           under_review: "Moved to Under Review",
           pending: "Reset to Pending",
@@ -324,7 +333,7 @@ export default function AdminVerificationsPage() {
                                   disabled={updatingId === p._id}
                                   onClick={() => updateStatus(p._id, "verified")}
                                 >
-                                  {updatingId === p._id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Approve"}
+                                  {updatingId === p._id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Approve Profile"}
                                 </Button>
                                 <Button
                                   size="sm"

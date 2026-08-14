@@ -25,6 +25,7 @@ interface Professional {
   languages: string[]
   verificationStatus: "pending" | "under_review" | "verified" | "rejected"
   isVerified: boolean
+  credentialVerified: boolean
   createdAt: string
 }
 
@@ -57,6 +58,13 @@ export default function VerificationDetailPage() {
   }, [id])
 
   const handleUpdateStatus = async (verificationStatus: string) => {
+    if (verificationStatus === "verified" && professional && !professional.credentialVerified) {
+      const shouldContinue = window.confirm(
+        "This professional has no approved credential documents yet. Approving now will mark their profile as platform reviewed only, not credentials verified."
+      )
+      if (!shouldContinue) return
+    }
+
     setUpdatingStatus(verificationStatus)
     try {
       const res = await fetch(`/api/admin/verifications/${id}`, {
@@ -68,7 +76,7 @@ export default function VerificationDetailPage() {
       if (!res.ok) { toast.error(d.error || "Failed to update"); return }
       setProfessional(d.professional)
       const labels: Record<string, string> = {
-        verified: "Professional approved",
+        verified: "Profile approved",
         rejected: "Application rejected",
         under_review: "Moved to Under Review",
         pending: "Reset to Pending",
@@ -219,7 +227,7 @@ export default function VerificationDetailPage() {
                     onClick={() => handleUpdateStatus("verified")}
                   >
                     {updatingStatus === "verified" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-                    Approve
+                    Approve Profile
                   </Button>
                 )}
                 {canReject && (

@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Star, MapPin, Clock, DollarSign, Languages, ShieldCheck, BadgeCheck } from "lucide-react"
+import { Star, MapPin, Clock, DollarSign, Languages, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { UserAvatar } from "@/components/user-avatar"
+import { CredentialBadge } from "@/components/credential-badge"
 
 interface Professional {
   id: string
@@ -65,24 +66,14 @@ export function ProfessionalCard({ professional }: ProfessionalCardProps) {
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs max-w-[200px]">
-                          <p className="font-semibold mb-0.5">Platform Verified</p>
+                          <p className="font-semibold mb-0.5">Platform reviewed</p>
                           <p>This professional's identity and application has been reviewed and approved by the Nexora team.</p>
                         </TooltipContent>
                       </Tooltip>
                     )}
 
                     {professional.credentialVerified && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-help">
-                            <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs max-w-[200px]">
-                          <p className="font-semibold mb-0.5">Credentials Verified</p>
-                          <p>This professional's degrees, licences, and certifications have been reviewed and confirmed by Nexora.</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <CredentialBadge size={20} />
                     )}
                   </div>
 
@@ -93,12 +84,12 @@ export function ProfessionalCard({ professional }: ProfessionalCardProps) {
                     <div className="flex items-center gap-3 flex-wrap mt-1">
                       {professional.verified && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <ShieldCheck className="w-3.5 h-3.5 text-primary" />Platform verified
+                          <ShieldCheck className="w-3.5 h-3.5 text-primary" />Platform reviewed
                         </span>
                       )}
                       {professional.credentialVerified && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <BadgeCheck className="w-3.5 h-3.5 text-emerald-500" />Credentials verified
+                          <CredentialBadge size={14} />Credentials verified
                         </span>
                       )}
                     </div>

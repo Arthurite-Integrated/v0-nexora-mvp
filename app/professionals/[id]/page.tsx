@@ -162,7 +162,10 @@ export default function ProfessionalProfilePage() {
                         </span>
                       )}
                       {professional.isVerified && (
-                        <Badge variant="outline" className="border-primary text-primary text-xs">Verified</Badge>
+                        <Badge variant="outline" className="border-primary text-primary text-xs">Platform reviewed</Badge>
+                      )}
+                      {professional.credentialVerified && (
+                        <Badge variant="outline" className="border-primary text-primary text-xs">Credentials verified</Badge>
                       )}
                     </div>
                   </div>

@@ -15,7 +15,7 @@ import { ImageUpload } from "@/components/image-upload"
 import { LocationPicker, locationToString, stringToLocation, type LocationValue } from "@/components/location-picker"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { BackButton } from "@/components/back-button"
-import { Loader2, Trash2, Plus, X, Upload, FileText, ExternalLink, BadgeCheck } from "lucide-react"
+import { Loader2, Trash2, Plus, X, Upload, FileText, ExternalLink } from "lucide-react"
 import { CredentialBadge } from "@/components/credential-badge"
 import { toast } from "sonner"
 
@@ -43,6 +43,28 @@ interface ProfessionalProfile {
   availability: { day: string; startTime: string; endTime: string }[]
   credentialDocs: CredentialDoc[]
   credentialVerified: boolean
+  verificationStatus?: "pending" | "under_review" | "verified" | "rejected"
+}
+
+function getCredentialStatus(docs: CredentialDoc[], verified: boolean) {
+  if (verified) return { label: "Verified", className: "bg-primary/10 text-primary border-primary/20" }
+  if (docs.some((doc) => doc.status === "pending")) return { label: "Pending review", className: "bg-yellow-50 text-yellow-700 border-yellow-200" }
+  if (docs.some((doc) => doc.status === "more_info")) return { label: "Needs info", className: "bg-orange-50 text-orange-700 border-orange-200" }
+  if (docs.length > 0) return { label: "Not verified", className: "bg-red-50 text-red-700 border-red-200" }
+  return { label: "Not submitted", className: "bg-muted text-muted-foreground border-border" }
+}
+
+function getProfileStatus(status?: ProfessionalProfile["verificationStatus"]) {
+  switch (status) {
+    case "verified":
+      return { label: "Approved", className: "bg-primary/10 text-primary border-primary/20" }
+    case "under_review":
+      return { label: "Under review", className: "bg-blue-50 text-blue-700 border-blue-200" }
+    case "rejected":
+      return { label: "Rejected", className: "bg-red-50 text-red-700 border-red-200" }
+    default:
+      return { label: "Pending", className: "bg-yellow-50 text-yellow-700 border-yellow-200" }
+  }
 }
 
 export default function SettingsPage() {
@@ -110,6 +132,7 @@ export default function SettingsPage() {
               availability: d.professional.availability || [],
               credentialDocs: d.professional.credentialDocs || [],
               credentialVerified: d.professional.credentialVerified || false,
+              verificationStatus: d.professional.verificationStatus || "pending",
             })
             setHasProfessionalProfile(true)
           }
@@ -394,6 +417,39 @@ export default function SettingsPage() {
                   </Card>
                 ) : (
                   <>
+                  {(() => {
+                    const profileStatus = getProfileStatus(proProfile.verificationStatus)
+                    const credentialStatus = getCredentialStatus(proProfile.credentialDocs, proProfile.credentialVerified)
+
+                    return (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Verification Status</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-md border border-border p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-medium text-foreground">Profile review</p>
+                              <Badge variant="outline" className={profileStatus.className}>{profileStatus.label}</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Nexora reviews your identity, application, and profile information before making your profile visible.
+                            </p>
+                          </div>
+                          <div className="rounded-md border border-border p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-medium text-foreground">Credentials</p>
+                              <Badge variant="outline" className={credentialStatus.className}>{credentialStatus.label}</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Upload degrees, licences, or certifications to earn the credentials verified badge.
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })()}
+
                   <form onSubmit={handleSaveProfessional} className="space-y-6">
                     <Card>
                       <CardHeader><CardTitle>Practice Details</CardTitle></CardHeader>

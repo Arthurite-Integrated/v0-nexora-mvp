@@ -5,7 +5,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
-import { ShieldCheck, BadgeCheck } from "lucide-react"
+import { ShieldCheck } from "lucide-react"
+import { CredentialBadge } from "@/components/credential-badge"
 import { SPECIALIZATIONS } from "@/lib/constants/specializations"
 
 const LOCATIONS = ["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan", "Enugu", "Kaduna", "Jos"]
@@ -151,7 +152,7 @@ export function ProfessionalFilters({ filters, onChange, onClear }: Professional
             />
             <Label htmlFor="verified-only" className="text-xs font-normal cursor-pointer space-y-0.5">
               <span className="flex items-center gap-1 font-medium">
-                <ShieldCheck className="w-3.5 h-3.5 text-primary" />Platform Verified
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" />Platform reviewed
               </span>
               <span className="text-muted-foreground">Identity reviewed by Nexora</span>
             </Label>
@@ -165,7 +166,7 @@ export function ProfessionalFilters({ filters, onChange, onClear }: Professional
             />
             <Label htmlFor="cred-verified" className="text-xs font-normal cursor-pointer space-y-0.5">
               <span className="flex items-center gap-1 font-medium">
-                <BadgeCheck className="w-3.5 h-3.5 text-emerald-500" />Credentials Verified
+                <CredentialBadge size={14} />Credentials verified only
               </span>
               <span className="text-muted-foreground">Degrees &amp; licences confirmed</span>
             </Label>

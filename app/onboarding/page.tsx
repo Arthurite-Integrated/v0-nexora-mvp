@@ -14,17 +14,19 @@ import { Card, CardContent } from "@/components/ui/card"
 import {
   Stethoscope, MapPin, FileText, Clock, DollarSign,
   Languages, Plus, X, CheckCircle, Loader2, ChevronRight, ChevronLeft,
+  Upload,
 } from "lucide-react"
 import { LocationPicker, locationToString, type LocationValue } from "@/components/location-picker"
 import { toast } from "sonner"
 
 const EMPTY_LOCATION: LocationValue = { country: "", countryName: "", state: "", stateName: "", city: "" }
 
-type OnboardingStep = "specialization" | "credentials" | "availability" | "fees" | "review"
+type OnboardingStep = "specialization" | "credentials" | "documents" | "availability" | "fees" | "review"
 
 const STEPS: { key: OnboardingStep; label: string; icon: React.ReactNode }[] = [
   { key: "specialization", label: "Specialization", icon: <Stethoscope className="w-4 h-4" /> },
   { key: "credentials", label: "Credentials", icon: <FileText className="w-4 h-4" /> },
+  { key: "documents", label: "Documents", icon: <Upload className="w-4 h-4" /> },
   { key: "availability", label: "Availability", icon: <Clock className="w-4 h-4" /> },
   { key: "fees", label: "Fees & Languages", icon: <DollarSign className="w-4 h-4" /> },
   { key: "review", label: "Review", icon: <CheckCircle className="w-4 h-4" /> },
@@ -70,6 +72,8 @@ export default function OnboardingPage() {
   const { user, loading, refreshUser } = useAuth()
   const [step, setStep] = useState<OnboardingStep>("specialization")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [credentialFiles, setCredentialFiles] = useState<File[]>([])
+  const [documentError, setDocumentError] = useState("")
 
   const [location, setLocation] = useState<LocationValue>(EMPTY_LOCATION)
   const [locationSeeded, setLocationSeeded] = useState(false)
@@ -124,6 +128,35 @@ export default function OnboardingPage() {
 
   const removeCredential = (c: string) =>
     setProfile(p => ({ ...p, credentials: p.credentials.filter(x => x !== c) }))
+
+  const addCredentialFiles = (files: FileList | null) => {
+    if (!files) return
+    setDocumentError("")
+
+    const allowed = ["application/pdf", "image/jpeg", "image/png", "image/webp"]
+    const incoming = Array.from(files)
+    const validFiles: File[] = []
+
+    for (const file of incoming) {
+      if (!allowed.includes(file.type)) {
+        setDocumentError("Only PDF, JPEG, PNG and WebP files are allowed.")
+        continue
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setDocumentError("Each document must be under 10 MB.")
+        continue
+      }
+      if (!credentialFiles.some((existing) => existing.name === file.name && existing.size === file.size)) {
+        validFiles.push(file)
+      }
+    }
+
+    setCredentialFiles((current) => [...current, ...validFiles].slice(0, 10))
+  }
+
+  const removeCredentialFile = (file: File) => {
+    setCredentialFiles((current) => current.filter((item) => !(item.name === file.name && item.size === file.size)))
+  }
 
   const toggleDay = (day: string) => {
     const exists = profile.availability.find(a => a.day === day)
@@ -193,11 +226,39 @@ export default function OnboardingPage() {
         toast.error(data.error || "Failed to save profile. Please try again.")
         return
       }
-      toast.success("Profile submitted for verification!")
+      const professionalId = data.professional?._id
+      let uploadedDocs = 0
+      if (professionalId && credentialFiles.length > 0) {
+        for (const file of credentialFiles) {
+          const presignRes = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contentType: file.type, folder: "credentials" }),
+          })
+          if (!presignRes.ok) throw new Error("Profile saved, but document upload could not start. You can retry from Settings.")
+
+          const { uploadUrl, publicUrl, key } = await presignRes.json()
+          const uploadRes = await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+          if (!uploadRes.ok) throw new Error("Profile saved, but a document failed to upload. You can retry from Settings.")
+
+          const saveRes = await fetch(`/api/professionals/${professionalId}/documents`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: publicUrl, filename: file.name, fileType: file.type, s3Key: key }),
+          })
+          if (!saveRes.ok) throw new Error("Profile saved, but a document could not be attached. You can retry from Settings.")
+          uploadedDocs += 1
+        }
+      }
+
+      toast.success(uploadedDocs > 0
+        ? `Profile submitted with ${uploadedDocs} credential document${uploadedDocs === 1 ? "" : "s"} pending review.`
+        : "Profile submitted for review. Upload credential documents anytime from Settings."
+      )
       await refreshUser()
       router.push("/dashboard")
-    } catch {
-      const msg = "Something went wrong. Please try again."
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong. Please try again."
       
       toast.error(msg)
     } finally {
@@ -365,6 +426,72 @@ export default function OnboardingPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* ── Documents ──────────────────────────────────────────── */}
+            {step === "documents" && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900 mb-1">Credential Documents</h2>
+                  <p className="text-slate-500 text-sm">
+                    Upload licences, degrees, or certifications now to start credential verification sooner.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                  <Upload className="w-8 h-8 text-primary mx-auto mb-3" />
+                  <Label
+                    htmlFor="credential-docs"
+                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-primary/90"
+                  >
+                    Choose Documents
+                  </Label>
+                  <input
+                    id="credential-docs"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      addCredentialFiles(e.target.files)
+                      e.target.value = ""
+                    }}
+                  />
+                  <p className="text-xs text-slate-500 mt-3">PDF or image files, max 10 MB each. You can also upload later from Settings.</p>
+                  {documentError && <p className="text-xs text-red-600 mt-2">{documentError}</p>}
+                </div>
+
+                {credentialFiles.length > 0 ? (
+                  <div className="space-y-2">
+                    {credentialFiles.map((file) => (
+                      <div key={`${file.name}-${file.size}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="w-4 h-4 text-slate-500 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-900 truncate">{file.name}</p>
+                            <p className="text-xs text-slate-500">{(file.size / (1024 * 1024)).toFixed(1)} MB</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeCredentialFile(file)}
+                          className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-red-600"
+                          aria-label={`Remove ${file.name}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-slate-200 p-4">
+                    <p className="text-sm font-medium text-slate-900">No documents added</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      You can submit your profile now, but the credentials verified badge requires approved documents.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -557,6 +684,14 @@ export default function OnboardingPage() {
                   <ReviewRow label="Location" value={locationToString(location)} />
                   <ReviewRow label="Experience" value={`${profile.experience} years`} />
                   <ReviewRow label="Bio" value={profile.bio} multiline />
+                  <ReviewRow
+                    label="Documents"
+                    value={credentialFiles.length > 0
+                      ? `${credentialFiles.length} document${credentialFiles.length === 1 ? "" : "s"} ready to upload`
+                      : "None - credential verification can be completed from Settings"
+                    }
+                    multiline
+                  />
                   <div className="flex justify-between py-3 border-b border-slate-100">
                     <span className="text-sm text-slate-500 font-medium">Credentials</span>
                     <div className="flex flex-wrap gap-1 justify-end max-w-xs">
