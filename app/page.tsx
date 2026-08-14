@@ -301,7 +301,7 @@ export default function HomePage() {
               <span className="hidden sm:inline">•</span>
               <CookiePreferencesButton />
             </div>
-            <p>&copy; 2024 Nexora. All rights reserved. Together in Care.</p>
+            <p>&copy; {new Date().getFullYear()} Nexora. All rights reserved. Together in Care.</p>
           </div>
         </div>
       </footer>
