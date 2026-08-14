@@ -8,6 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { CheckCircle, X, MapPin, Clock, Languages, ArrowLeft, Loader2, Award } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -43,6 +55,11 @@ export default function VerificationDetailPage() {
   const [professional, setProfessional] = useState<Professional | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
+  const [showApprovalWarning, setShowApprovalWarning] = useState(false)
+  const [messageOpen, setMessageOpen] = useState(false)
+  const [messageSubject, setMessageSubject] = useState("Clarification Needed for Your Nexora Professional Review")
+  const [messageBody, setMessageBody] = useState("")
+  const [isSendingMessage, setIsSendingMessage] = useState(false)
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "admin")) router.push("/dashboard")
@@ -58,13 +75,6 @@ export default function VerificationDetailPage() {
   }, [id])
 
   const handleUpdateStatus = async (verificationStatus: string) => {
-    if (verificationStatus === "verified" && professional && !professional.credentialVerified) {
-      const shouldContinue = window.confirm(
-        "This professional has no approved credential documents yet. Approving now will mark their profile as platform reviewed only, not credentials verified."
-      )
-      if (!shouldContinue) return
-    }
-
     setUpdatingStatus(verificationStatus)
     try {
       const res = await fetch(`/api/admin/verifications/${id}`, {
@@ -86,6 +96,44 @@ export default function VerificationDetailPage() {
       toast.error("Something went wrong")
     } finally {
       setUpdatingStatus(null)
+    }
+  }
+
+  const requestApproval = () => {
+    if (!professional) return
+    if (!professional.credentialVerified) {
+      setShowApprovalWarning(true)
+      return
+    }
+    handleUpdateStatus("verified")
+  }
+
+  const sendMessage = async () => {
+    if (!professional) return
+    if (messageBody.trim().length < 10) {
+      toast.error("Please enter a message with at least 10 characters")
+      return
+    }
+
+    setIsSendingMessage(true)
+    try {
+      const res = await fetch(`/api/admin/verifications/${professional._id}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: messageSubject, message: messageBody }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Failed to send message")
+        return
+      }
+      toast.success("Message sent by Nexora Compliance Team")
+      setMessageOpen(false)
+      setMessageBody("")
+    } catch {
+      toast.error("Something went wrong")
+    } finally {
+      setIsSendingMessage(false)
     }
   }
 
@@ -224,12 +272,20 @@ export default function VerificationDetailPage() {
                   <Button
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                     disabled={!!updatingStatus}
-                    onClick={() => handleUpdateStatus("verified")}
+                    onClick={requestApproval}
                   >
                     {updatingStatus === "verified" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
                     Approve Profile
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={!!updatingStatus}
+                  onClick={() => setMessageOpen(true)}
+                >
+                  Message Practitioner
+                </Button>
                 {canReject && (
                   <Button
                     variant="destructive"
@@ -256,6 +312,62 @@ export default function VerificationDetailPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showApprovalWarning}
+        onOpenChange={setShowApprovalWarning}
+        title="Approve profile only?"
+        description="This professional has no approved credential documents yet. Approving now will mark their profile as platform reviewed only, not credentials verified."
+        confirmLabel="Approve Profile"
+        cancelLabel="Cancel"
+        variant="default"
+        isLoading={!!updatingStatus}
+        onConfirm={() => {
+          setShowApprovalWarning(false)
+          handleUpdateStatus("verified")
+        }}
+      />
+
+      <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Message Practitioner</DialogTitle>
+            <DialogDescription>
+              Send a clarification request as Nexora Compliance Team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-md border border-border bg-muted/40 p-3">
+              <p className="text-sm font-medium text-foreground">{professional.name}</p>
+              <p className="text-xs text-muted-foreground">{professional.email}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="verification-detail-message-subject">Subject</Label>
+              <Input
+                id="verification-detail-message-subject"
+                value={messageSubject}
+                onChange={(e) => setMessageSubject(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="verification-detail-message-body">Message</Label>
+              <Textarea
+                id="verification-detail-message-body"
+                value={messageBody}
+                onChange={(e) => setMessageBody(e.target.value)}
+                placeholder="Explain what needs clarification or which document should be updated..."
+                className="min-h-[160px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMessageOpen(false)} disabled={isSendingMessage}>Cancel</Button>
+            <Button onClick={sendMessage} disabled={isSendingMessage}>
+              {isSendingMessage ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : "Send Message"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

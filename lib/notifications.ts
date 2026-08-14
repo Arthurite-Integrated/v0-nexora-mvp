@@ -112,17 +112,31 @@ export interface BookingEmailData {
   notes?: string
 }
 
-async function sendMail(to: string, subject: string, html: string) {
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+function textToHtml(value: string) {
+  return escapeHtml(value).replace(/\n/g, "<br/>")
+}
+
+async function sendMail(to: string, subject: string, html: string, fromName = "Nexora Care", throwOnError = false) {
   try {
     const transporter = createTransporter()
     await transporter.sendMail({
-      from: `"Nexora Care" <${process.env.ZOHO_EMAIL}>`,
+      from: `"${fromName}" <${process.env.ZOHO_EMAIL}>`,
       to,
       subject,
       html,
     })
   } catch (err) {
     console.error(`[notifications] Failed to send email to ${to}:`, err)
+    if (throwOnError) throw err
     // Non-fatal — booking is already saved
   }
 }
@@ -369,6 +383,42 @@ export async function sendProfessionalRejected(professionalEmail: string, profes
     ctaUrl: `${APP_URL}/settings`,
   })
   await sendMail(professionalEmail, "Update on Your Nexora Professional Application", html)
+}
+
+// ── 7. Compliance clarification message ──────────────────────────────────────
+
+export async function sendProfessionalComplianceMessage({
+  professionalEmail,
+  professionalName,
+  subject,
+  message,
+}: {
+  professionalEmail: string
+  professionalName: string
+  subject: string
+  message: string
+}) {
+  const safeSubject = subject.trim() || "Clarification Needed for Your Nexora Professional Review"
+  const html = buildEmailHtml({
+    preheader: `The Nexora Compliance Team has sent you a message about your professional review`,
+    body: `
+      <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#111827;">Professional Review Update</h2>
+      <p style="margin:0 0 24px;font-size:14px;color:#6b7280;">
+        Dear <strong>${escapeHtml(professionalName)}</strong>, the Nexora Compliance Team has a message about your professional profile review.
+      </p>
+
+      <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+        <p style="margin:0;font-size:14px;color:#374151;line-height:1.7;">${textToHtml(message)}</p>
+      </div>
+
+      <p style="margin:0;font-size:13px;color:#6b7280;">
+        You can update your profile or upload additional credential documents from your Nexora settings.
+      </p>`,
+    ctaLabel: "Open Settings",
+    ctaUrl: `${APP_URL}/settings`,
+  })
+
+  await sendMail(professionalEmail, safeSubject, html, "Nexora Compliance Team", true)
 }
 
 // ── Google Sheets ─────────────────────────────────────────────────────────────
