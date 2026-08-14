@@ -15,12 +15,23 @@ import { ImageUpload } from "@/components/image-upload"
 import { LocationPicker, locationToString, stringToLocation, type LocationValue } from "@/components/location-picker"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { BackButton } from "@/components/back-button"
-import { Loader2, Trash2, Plus, X } from "lucide-react"
+import { Loader2, Trash2, Plus, X, Upload, FileText, ExternalLink, BadgeCheck } from "lucide-react"
+import { CredentialBadge } from "@/components/credential-badge"
 import { toast } from "sonner"
 
 const EMPTY_LOCATION: LocationValue = { country: "", countryName: "", state: "", stateName: "", city: "" }
 
 const LANGUAGES = ["English", "Yoruba", "Hausa", "Igbo", "French", "Arabic", "Pidgin"]
+
+interface CredentialDoc {
+  _id: string
+  url: string
+  filename: string
+  fileType: string
+  status: "pending" | "approved" | "rejected" | "more_info"
+  adminNote?: string
+  uploadedAt: string
+}
 
 interface ProfessionalProfile {
   _id?: string
@@ -30,10 +41,12 @@ interface ProfessionalProfile {
   consultationFee: number
   languages: string[]
   availability: { day: string; startTime: string; endTime: string }[]
+  credentialDocs: CredentialDoc[]
+  credentialVerified: boolean
 }
 
 export default function SettingsPage() {
-  const { user, loading, deleteAccount } = useAuth()
+  const { user, loading, refreshUser, deleteAccount } = useAuth()
   const router = useRouter()
 
   // ── Account fields ────────────────────────────────────────────────────────
@@ -46,12 +59,15 @@ export default function SettingsPage() {
   // ── Professional profile fields ───────────────────────────────────────────
   const [proProfile, setProProfile] = useState<ProfessionalProfile>({
     specialization: "", bio: "", credentials: [], consultationFee: 0, languages: [], availability: [],
+    credentialDocs: [], credentialVerified: false,
   })
   const [credentialInput, setCredentialInput] = useState("")
   const [languageInput, setLanguageInput] = useState("")
   const [proLoading, setProLoading] = useState(false)
   const [proInitialized, setProInitialized] = useState(false)
   const [isSavingPro, setIsSavingPro] = useState(false)
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false)
+  const [docError, setDocError] = useState("")
   const [hasProfessionalProfile, setHasProfessionalProfile] = useState(false)
 
   // ── Danger zone ───────────────────────────────────────────────────────────
@@ -92,6 +108,8 @@ export default function SettingsPage() {
               consultationFee: d.professional.consultationFee || 0,
               languages: d.professional.languages || [],
               availability: d.professional.availability || [],
+              credentialDocs: d.professional.credentialDocs || [],
+              credentialVerified: d.professional.credentialVerified || false,
             })
             setHasProfessionalProfile(true)
           }
@@ -126,7 +144,10 @@ export default function SettingsPage() {
         if (d.user.locationData?.country) setLocation(d.user.locationData)
         setProfileImage(d.user.profileImage || "")
       }
-      toast.success("Account saved")
+      // Refresh AuthContext so completion banner re-evaluates immediately
+      await refreshUser()
+      toast.success("Profile saved")
+      router.push("/dashboard")
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to save")
     } finally {
@@ -194,6 +215,59 @@ export default function SettingsPage() {
   const removeCustomLanguage = (lang: string) =>
     setProProfile(p => ({ ...p, languages: p.languages.filter(l => l !== lang) }))
 
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !proProfile._id) return
+    setDocError("")
+    const allowed = ["application/pdf", "image/jpeg", "image/png", "image/webp"]
+    if (!allowed.includes(file.type)) { setDocError("Only PDF, JPEG, PNG and WebP files allowed"); return }
+    if (file.size > 10 * 1024 * 1024) { setDocError("File must be under 10 MB"); return }
+    setIsUploadingDoc(true)
+    try {
+      // Get presigned URL
+      const presignRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentType: file.type, folder: "credentials" }),
+      })
+      if (!presignRes.ok) throw new Error("Failed to get upload URL")
+      const { uploadUrl, publicUrl, key } = await presignRes.json()
+      // Upload to S3
+      const uploadRes = await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+      if (!uploadRes.ok) throw new Error("Upload to S3 failed")
+      // Save doc reference to professional profile
+      const saveRes = await fetch(`/api/professionals/${proProfile._id}/documents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: publicUrl, filename: file.name, fileType: file.type, s3Key: key }),
+      })
+      if (!saveRes.ok) { const d = await saveRes.json(); throw new Error(d.error || "Failed to save document") }
+      const d = await saveRes.json()
+      setProProfile(p => ({ ...p, credentialDocs: d.professional?.credentialDocs || p.credentialDocs }))
+      toast.success("Document uploaded — pending admin review")
+    } catch (err: unknown) {
+      setDocError(err instanceof Error ? err.message : "Upload failed")
+    } finally {
+      setIsUploadingDoc(false)
+      e.target.value = ""
+    }
+  }
+
+  const handleDeleteDoc = async (docId: string) => {
+    if (!proProfile._id) return
+    try {
+      const res = await fetch(`/api/professionals/${proProfile._id}/documents`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ docId }),
+      })
+      if (res.ok) {
+        setProProfile(p => ({ ...p, credentialDocs: p.credentialDocs.filter((d: { _id: string }) => d._id !== docId) }))
+        toast.success("Document removed")
+      } else toast.error("Failed to remove document")
+    } catch { toast.error("Something went wrong") }
+  }
+
   const handleDeleteAccount = async () => {
     setIsDeleting(true)
     try {
@@ -252,7 +326,7 @@ export default function SettingsPage() {
                   ) : (
                     <form onSubmit={handleSaveAccount} className="space-y-6">
                       <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6">
-                        <ImageUpload value={profileImage} onChange={setProfileImage} folder="profiles" size={96} label="Change photo" />
+                        <ImageUpload value={profileImage} onChange={setProfileImage} folder="profiles" size={96} label="Change photo" role={user?.role} />
                         <div className="flex-1 space-y-1 text-center sm:text-left pt-1">
                           <p className="font-semibold text-foreground">{user?.name}</p>
                           <p className="text-sm text-muted-foreground">{user?.email}</p>
@@ -319,6 +393,7 @@ export default function SettingsPage() {
                     </CardContent>
                   </Card>
                 ) : (
+                  <>
                   <form onSubmit={handleSaveProfessional} className="space-y-6">
                     <Card>
                       <CardHeader><CardTitle>Practice Details</CardTitle></CardHeader>
@@ -438,6 +513,80 @@ export default function SettingsPage() {
                       {isSavingPro ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Professional Profile"}
                     </Button>
                   </form>
+
+                  {/* Credential Documents */}
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <FileText className="w-4 h-4" />Credential Documents
+                          {proProfile.credentialVerified && <CredentialBadge size={16} />}
+                        </CardTitle>
+                        <Label
+                          htmlFor="doc-upload"
+                          className={`flex items-center gap-1.5 text-xs cursor-pointer px-3 py-1.5 rounded-md border border-border hover:bg-muted/50 transition-colors ${isUploadingDoc ? "opacity-50 pointer-events-none" : ""}`}
+                        >
+                          {isUploadingDoc ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                          Upload
+                          <input
+                            id="doc-upload"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.webp"
+                            className="hidden"
+                            onChange={handleDocUpload}
+                            disabled={isUploadingDoc}
+                          />
+                        </Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upload your degrees, licences, or certifications (PDF or image, max 10 MB each).
+                        Admin will review and award a verified badge once approved.
+                      </p>
+                      {docError && <p className="text-xs text-destructive mt-1">{docError}</p>}
+                    </CardHeader>
+                    <CardContent>
+                      {proProfile.credentialDocs.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">No documents uploaded yet.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {proProfile.credentialDocs.map((doc) => (
+                            <div key={doc._id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">{doc.filename}</p>
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-xs px-1.5 py-0.5 rounded-full capitalize ${
+                                      doc.status === "approved" ? "bg-green-50 text-green-700" :
+                                      doc.status === "rejected" ? "bg-red-50 text-red-700" :
+                                      doc.status === "more_info" ? "bg-yellow-50 text-yellow-700" :
+                                      "bg-muted text-muted-foreground"
+                                    }`}>
+                                      {doc.status === "more_info" ? "More info needed" : doc.status}
+                                    </span>
+                                    {doc.adminNote && <span className="text-xs text-muted-foreground italic truncate">{doc.adminNote}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <a href={doc.url} target="_blank" rel="noopener noreferrer"
+                                  className="p-1.5 rounded hover:bg-muted transition-colors">
+                                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                                </a>
+                                {doc.status !== "approved" && (
+                                  <button onClick={() => handleDeleteDoc(doc._id)}
+                                    className="p-1.5 rounded hover:bg-muted transition-colors">
+                                    <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  </>
                 )}
               </TabsContent>
             )}

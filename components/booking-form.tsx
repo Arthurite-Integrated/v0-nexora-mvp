@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Calendar, Clock, CheckCircle, Loader2, ChevronRight, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { IDD_CONCERN_LABELS, IDD_CONCERNS } from "@/lib/constants/idd-concerns"
 
 interface AvailabilitySlot {
   day: string
@@ -71,6 +72,7 @@ export function BookingForm({ professional }: BookingFormProps) {
   const [selectedTime, setSelectedTime] = useState<string>("")
   const [consultationType, setConsultationType] = useState("video")
   const [notes, setNotes] = useState("")
+  const [presentingConcern, setPresentingConcern] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Build available date+slot options from professional's availability
@@ -121,6 +123,7 @@ export function BookingForm({ professional }: BookingFormProps) {
           duration: 60,
           consultationType,
           notes: notes.trim() || undefined,
+          presentingConcern: presentingConcern || undefined,
         }),
       })
       const d = await res.json()
@@ -310,6 +313,26 @@ export function BookingForm({ professional }: BookingFormProps) {
                   </div>
                 ))}
               </RadioGroup>
+            </div>
+
+            {/* Presenting concern */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Primary concern <span className="text-muted-foreground font-normal">(optional — helps us improve care data)</span>
+              </Label>
+              <select
+                value={presentingConcern}
+                onChange={e => setPresentingConcern(e.target.value)}
+                className="w-full border border-input bg-background rounded-md px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="">Select a concern category…</option>
+                {IDD_CONCERNS.map(c => (
+                  <option key={c} value={c}>{IDD_CONCERN_LABELS[c]}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                This is anonymised and used only for research. It is never shared with the professional or attached to your personal record.
+              </p>
             </div>
 
             {/* Notes */}

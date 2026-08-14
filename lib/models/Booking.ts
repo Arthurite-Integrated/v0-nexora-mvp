@@ -1,4 +1,7 @@
 import { Schema, model, models, Document, Types } from "mongoose"
+import { IDD_CONCERNS, IDDConcern } from "@/lib/constants/idd-concerns"
+export { IDD_CONCERNS, IDD_CONCERN_LABELS } from "@/lib/constants/idd-concerns"
+export type { IDDConcern } from "@/lib/constants/idd-concerns"
 
 export interface IBooking extends Document {
   professionalId: Types.ObjectId
@@ -9,6 +12,9 @@ export interface IBooking extends Document {
   consultationType: "video" | "phone" | "in-person"
   notes?: string
   fee: number
+  // Research fields — optional, never personally identifiable
+  presentingConcern?: IDDConcern   // set by caregiver at booking
+  confirmedConcern?: IDDConcern    // set by professional on completion
   createdAt: Date
   updatedAt: Date
 }
@@ -31,6 +37,8 @@ const BookingSchema = new Schema<IBooking>(
     },
     notes: String,
     fee: { type: Number, required: true },
+    presentingConcern: { type: String, enum: [...IDD_CONCERNS], default: null },
+    confirmedConcern: { type: String, enum: [...IDD_CONCERNS], default: null },
   },
   { timestamps: true }
 )

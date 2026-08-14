@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth-middleware"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/lib/models/User"
+import { appendSignupToSheet } from "@/lib/notifications"
 
 export async function GET(req: NextRequest) {
   return requireAuth(req, async (_, user) => {
@@ -26,7 +27,25 @@ export async function PATCH(req: NextRequest) {
         body.location = [city, stateName, countryName].filter(Boolean).join(", ")
       }
 
-      const updated = await User.findByIdAndUpdate(user._id, body, { new: true }).lean()
+      const updated = await User.findByIdAndUpdate(user._id, body, { new: true }).lean() as {
+        role?: string; location?: string
+        locationData?: { stateName?: string; countryName?: string }
+        careProfile?: { relationship?: string; patientAgeGroup?: string; diagnosisStatus?: string }
+      } | null
+
+      // When caregiver completes their care profile onboarding, write the complete signup row
+      // (location + careProfile in one row, no separate update row needed)
+      if (body.careProfile?.relationship && updated && user.role === "caregiver") {
+        await appendSignupToSheet({
+          role: "caregiver",
+          state: updated.locationData?.stateName || updated.location?.split(",")?.[1]?.trim() || "",
+          country: updated.locationData?.countryName || updated.location?.split(",")?.pop()?.trim() || "Nigeria",
+          relationship: updated.careProfile?.relationship || "",
+          patientAgeGroup: updated.careProfile?.patientAgeGroup || "",
+          diagnosisStatus: updated.careProfile?.diagnosisStatus || "",
+        }).catch(err => console.error("[users/me PATCH] sheet error:", err))
+      }
+
       return NextResponse.json({ user: updated })
     } catch {
       return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })

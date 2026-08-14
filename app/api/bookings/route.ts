@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { Booking } from "@/lib/models/Booking"
 import { Professional } from "@/lib/models/Professional"
+import { Review } from "@/lib/models/Review"
 import { User } from "@/lib/models/User"
 import { requireAuth } from "@/lib/auth-middleware"
 import {
@@ -37,7 +38,17 @@ export async function GET(req: NextRequest) {
         .populate("caregiverId", "name email profileImage")
         .lean()
 
-      return NextResponse.json({ bookings, total, page, pages: Math.ceil(total / limit) })
+      // For caregivers: flag which completed bookings already have a review
+      const allBookings = bookings as unknown as Array<{ _id: { toString(): string }; status: string }>
+      let enriched: unknown[] = allBookings
+      if (user.role === "caregiver") {
+        const completedIds = allBookings.filter(b => b.status === "completed").map(b => b._id)
+        const reviews = await Review.find({ bookingId: { $in: completedIds } }, "bookingId").lean()
+        const reviewedSet = new Set((reviews as unknown as Array<{ bookingId: { toString(): string } }>).map(r => r.bookingId.toString()))
+        enriched = allBookings.map(b => ({ ...b, hasReview: reviewedSet.has(b._id.toString()) }))
+      }
+
+      return NextResponse.json({ bookings: enriched as typeof bookings, total, page, pages: Math.ceil(total / limit) })
     } catch (err: unknown) {
       console.error("GET /api/bookings error:", err)
       return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 })
@@ -55,7 +66,7 @@ export async function POST(req: NextRequest) {
       await connectDB()
 
       const body = await req.json()
-      const { professionalId, date, consultationType, notes, duration } = body
+      const { professionalId, date, consultationType, notes, duration, presentingConcern } = body
 
       if (!professionalId || !date) {
         return NextResponse.json({ error: "professionalId and date are required" }, { status: 400 })
@@ -75,6 +86,7 @@ export async function POST(req: NextRequest) {
         notes,
         fee: professional.consultationFee,
         status: "pending",
+        presentingConcern: presentingConcern || undefined,
       })
 
       // Fetch professional's user record to get their email
@@ -94,12 +106,14 @@ export async function POST(req: NextRequest) {
         notes,
       }
 
-      // Fire emails + sheet in background — don't await so response is fast
-      Promise.all([
-        sendBookingRequestedCaregiver(emailData),
-        sendBookingRequestedProfessional(emailData),
-        appendBookingToSheet(emailData),
-      ]).catch(err => console.error("[bookings/POST] notification error:", err))
+      // Sheet must be awaited — Lambda kills background promises after response
+      await appendBookingToSheet(emailData).catch(err =>
+        console.error("[bookings/POST] sheet error:", err)
+      )
+
+      // Emails can fire last — non-critical for data integrity
+      sendBookingRequestedCaregiver(emailData).catch(() => {})
+      sendBookingRequestedProfessional(emailData).catch(() => {})
 
       return NextResponse.json({ booking }, { status: 201 })
     } catch (err: unknown) {

@@ -148,7 +148,7 @@ export default function HomePage() {
                     <CardHeader className="text-center">
                       <div className="w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-gray-200">
                         <img
-                          src={professional.profileImage || "/placeholder.svg"}
+                          src={professional.profileImage || "/avatar-professional.svg"}
                           alt={professional.name}
                           className="w-full h-full object-cover"
                         />

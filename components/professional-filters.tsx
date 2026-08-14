@@ -1,122 +1,202 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
+import { ShieldCheck, BadgeCheck } from "lucide-react"
+import { SPECIALIZATIONS } from "@/lib/constants/specializations"
 
-export function ProfessionalFilters() {
+const LOCATIONS = ["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan", "Enugu", "Kaduna", "Jos"]
+const LANGUAGES = ["English", "Yoruba", "Igbo", "Hausa", "French", "Arabic", "Pidgin"]
+
+export interface FilterState {
+  specializations: string[]
+  locations: string[]
+  languages: string[]
+  minExperience: number
+  maxFee: number
+  verifiedOnly: boolean
+  credentialVerifiedOnly: boolean
+  sortBy: "rating" | "experience" | "fee_asc" | "fee_desc"
+}
+
+export const DEFAULT_FILTERS: FilterState = {
+  specializations: [],
+  locations: [],
+  languages: [],
+  minExperience: 0,
+  maxFee: 0,           // 0 = no limit
+  verifiedOnly: false,
+  credentialVerifiedOnly: false,
+  sortBy: "rating",
+}
+
+interface ProfessionalFiltersProps {
+  filters: FilterState
+  onChange: (filters: FilterState) => void
+  onClear: () => void
+}
+
+function toggleItem(arr: string[], item: string): string[] {
+  return arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item]
+}
+
+const activeCount = (f: FilterState) =>
+  f.specializations.length + f.locations.length + f.languages.length +
+  (f.minExperience > 0 ? 1 : 0) + (f.maxFee > 0 ? 1 : 0) +
+  (f.verifiedOnly ? 1 : 0) + (f.credentialVerifiedOnly ? 1 : 0)
+
+export function ProfessionalFilters({ filters, onChange, onClear }: ProfessionalFiltersProps) {
+  const set = (patch: Partial<FilterState>) => onChange({ ...filters, ...patch })
+  const count = activeCount(filters)
+
   return (
-    <div className="space-y-6">
-      {/* Specialization Filter */}
+    <div className="space-y-4">
+      {/* Specialization */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Specialization</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">Specialization</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            "Developmental Pediatrics",
-            "Speech Therapy",
-            "Occupational Therapy",
-            "Behavioral Therapy",
-            "Special Education",
-            "Psychiatry",
-            "Psychology",
-            "Physical Therapy",
-          ].map((specialization) => (
-            <div key={specialization} className="flex items-center space-x-2">
-              <Checkbox id={specialization} />
-              <Label htmlFor={specialization} className="text-sm font-normal">
-                {specialization}
-              </Label>
+        <CardContent className="space-y-2.5 max-h-64 overflow-y-auto">
+          {SPECIALIZATIONS.map(s => (
+            <div key={s} className="flex items-center gap-2">
+              <Checkbox
+                id={`spec-${s}`}
+                checked={filters.specializations.includes(s)}
+                onCheckedChange={() => set({ specializations: toggleItem(filters.specializations, s) })}
+              />
+              <Label htmlFor={`spec-${s}`} className="text-xs font-normal cursor-pointer leading-snug">{s}</Label>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      {/* Location Filter */}
+      {/* Location */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Location</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">Location</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan", "Enugu", "Kaduna", "Jos"].map((location) => (
-            <div key={location} className="flex items-center space-x-2">
-              <Checkbox id={location} />
-              <Label htmlFor={location} className="text-sm font-normal">
-                {location}
-              </Label>
+        <CardContent className="space-y-2.5">
+          {LOCATIONS.map(loc => (
+            <div key={loc} className="flex items-center gap-2">
+              <Checkbox
+                id={`loc-${loc}`}
+                checked={filters.locations.includes(loc)}
+                onCheckedChange={() => set({ locations: toggleItem(filters.locations, loc) })}
+              />
+              <Label htmlFor={`loc-${loc}`} className="text-xs font-normal cursor-pointer">{loc}</Label>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      {/* Experience Filter */}
+      {/* Experience */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Years of Experience</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">Min. Years of Experience</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <Slider defaultValue={[0]} max={25} step={1} className="w-full" />
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>0 years</span>
-              <span>25+ years</span>
-            </div>
+          <Slider
+            value={[filters.minExperience]}
+            onValueChange={([v]) => set({ minExperience: v })}
+            min={0} max={20} step={1}
+            className="mb-3"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Any</span>
+            <span className="font-medium text-foreground">
+              {filters.minExperience > 0 ? `${filters.minExperience}+ yrs` : "No minimum"}
+            </span>
+            <span>20+</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Price Range Filter */}
+      {/* Fee */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Consultation Fee</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">Max. Consultation Fee</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <Slider defaultValue={[10000]} max={50000} step={5000} className="w-full" />
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>₦10,000</span>
-              <span>₦50,000+</span>
-            </div>
+          <Slider
+            value={[filters.maxFee || 50000]}
+            onValueChange={([v]) => set({ maxFee: v >= 50000 ? 0 : v })}
+            min={5000} max={50000} step={5000}
+            className="mb-3"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>₦5k</span>
+            <span className="font-medium text-foreground">
+              {filters.maxFee > 0 ? `Up to ₦${(filters.maxFee / 1000).toFixed(0)}k` : "No limit"}
+            </span>
+            <span>Any</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Verification Filter */}
+      {/* Verification */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Verification</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">Verification</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox id="verified" />
-            <Label htmlFor="verified" className="text-sm font-normal">
-              Verified Professionals Only
+        <CardContent className="space-y-2.5">
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="verified-only"
+              checked={filters.verifiedOnly}
+              onCheckedChange={v => set({ verifiedOnly: !!v })}
+              className="mt-0.5"
+            />
+            <Label htmlFor="verified-only" className="text-xs font-normal cursor-pointer space-y-0.5">
+              <span className="flex items-center gap-1 font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" />Platform Verified
+              </span>
+              <span className="text-muted-foreground">Identity reviewed by Nexora</span>
+            </Label>
+          </div>
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="cred-verified"
+              checked={filters.credentialVerifiedOnly}
+              onCheckedChange={v => set({ credentialVerifiedOnly: !!v })}
+              className="mt-0.5"
+            />
+            <Label htmlFor="cred-verified" className="text-xs font-normal cursor-pointer space-y-0.5">
+              <span className="flex items-center gap-1 font-medium">
+                <BadgeCheck className="w-3.5 h-3.5 text-emerald-500" />Credentials Verified
+              </span>
+              <span className="text-muted-foreground">Degrees &amp; licences confirmed</span>
             </Label>
           </div>
         </CardContent>
       </Card>
 
-      {/* Languages Filter */}
+      {/* Languages */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Languages</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">Languages</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {["English", "Yoruba", "Igbo", "Hausa", "French"].map((language) => (
-            <div key={language} className="flex items-center space-x-2">
-              <Checkbox id={language} />
-              <Label htmlFor={language} className="text-sm font-normal">
-                {language}
-              </Label>
+        <CardContent className="space-y-2.5">
+          {LANGUAGES.map(lang => (
+            <div key={lang} className="flex items-center gap-2">
+              <Checkbox
+                id={`lang-${lang}`}
+                checked={filters.languages.includes(lang)}
+                onCheckedChange={() => set({ languages: toggleItem(filters.languages, lang) })}
+              />
+              <Label htmlFor={`lang-${lang}`} className="text-xs font-normal cursor-pointer">{lang}</Label>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      <Button className="w-full bg-transparent" variant="outline">
-        Clear All Filters
-      </Button>
+      {count > 0 && (
+        <Button variant="outline" className="w-full text-xs" onClick={onClear}>
+          Clear {count} filter{count !== 1 ? "s" : ""}
+        </Button>
+      )}
     </div>
   )
 }

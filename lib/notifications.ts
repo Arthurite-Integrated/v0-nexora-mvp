@@ -249,7 +249,7 @@ export async function sendBookingConfirmedCaregiver(data: BookingEmailData) {
     preheader: `Your appointment with ${data.professionalName} is confirmed`,
     body: `
       <div style="text-align:center;margin-bottom:24px;">
-        <div style="display:inline-block;background:#d1fae5;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:24px;text-align:center;">✓</div>
+        <div style="display:inline-block;background:#d1fae5;border-radius:50%;width:56px;height:56px;text-align:center;vertical-align:middle;"><div style="line-height:56px;font-size:22px;color:#065f46;font-weight:700;">&#10003;</div></div>
       </div>
       <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#111827;text-align:center;">Appointment Confirmed</h2>
       <p style="margin:0 0 24px;font-size:14px;color:#6b7280;text-align:center;">
@@ -316,13 +316,85 @@ export async function sendBookingDeclinedCaregiver(data: BookingEmailData) {
   await sendMail(data.caregiverEmail, `Booking Request Declined — ${data.professionalName}`, html)
 }
 
+// ── 5. Professional approved ──────────────────────────────────────────────────
+
+export async function sendProfessionalApproved(professionalEmail: string, professionalName: string) {
+  const html = buildEmailHtml({
+    preheader: `Your Nexora professional profile has been approved`,
+    body: `
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="display:inline-block;background:#d1fae5;border-radius:50%;width:56px;height:56px;text-align:center;vertical-align:middle;"><div style="line-height:56px;font-size:22px;color:#065f46;font-weight:700;">&#10003;</div></div>
+      </div>
+      <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#111827;text-align:center;">Profile Approved</h2>
+      <p style="margin:0 0 24px;font-size:14px;color:#6b7280;text-align:center;">
+        Congratulations, <strong>${professionalName}</strong>! Your professional profile has been reviewed and approved by the Nexora team.
+      </p>
+      <div style="background:#f0fdf9;border:1px solid #d1fae5;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+        <p style="margin:0 0 12px;font-size:14px;color:#374151;font-weight:600;">What this means:</p>
+        <ul style="margin:0;padding-left:20px;font-size:13px;color:#6b7280;line-height:1.8;">
+          <li>Your profile is now visible to caregivers on Nexora</li>
+          <li>Caregivers can find you and book consultations</li>
+          <li>You will receive booking requests via email and on your dashboard</li>
+        </ul>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6b7280;">
+        Make sure your availability and consultation fee are up to date in your settings so caregivers can book you.
+      </p>`,
+    ctaLabel: "Go to Dashboard",
+    ctaUrl: `${APP_URL}/dashboard`,
+  })
+  await sendMail(professionalEmail, "Your Nexora Profile Has Been Approved", html)
+}
+
+// ── 6. Professional rejected ──────────────────────────────────────────────────
+
+export async function sendProfessionalRejected(professionalEmail: string, professionalName: string) {
+  const html = buildEmailHtml({
+    preheader: `An update on your Nexora professional profile application`,
+    body: `
+      <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#111827;">Application Update</h2>
+      <p style="margin:0 0 24px;font-size:14px;color:#6b7280;">
+        Dear <strong>${professionalName}</strong>, thank you for applying to join Nexora as a healthcare professional.
+      </p>
+      <p style="margin:0 0 24px;font-size:14px;color:#6b7280;">
+        After reviewing your application, we are unable to approve your profile at this time. This may be due to incomplete information or credentials that could not be verified.
+      </p>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+        <p style="margin:0;font-size:13px;color:#6b7280;">
+          If you believe this is an error or would like to provide additional information, please contact us at
+          <a href="mailto:admin@nexoracare.com" style="color:#0f766e;">admin@nexoracare.com</a> and we will be happy to review your application again.
+        </p>
+      </div>`,
+    ctaLabel: "Update Your Profile",
+    ctaUrl: `${APP_URL}/settings`,
+  })
+  await sendMail(professionalEmail, "Update on Your Nexora Professional Application", html)
+}
+
 // ── Google Sheets ─────────────────────────────────────────────────────────────
+
+function parsePrivateKey(raw: string | undefined): string {
+  if (!raw) return ""
+  // Amplify may store the key with literal \n or with real newlines — handle both
+  let key = raw
+  // If it doesn't contain real newlines but has \n sequences, replace them
+  if (!key.includes("\n")) {
+    key = key.replace(/\\n/g, "\n")
+  }
+  // Ensure the key has proper PEM structure
+  key = key.trim()
+  if (!key.startsWith("-----BEGIN")) {
+    // May be base64-only without headers — unlikely but guard it
+    console.error("[notifications] GOOGLE_PRIVATE_KEY does not start with PEM header")
+  }
+  return key
+}
 
 async function getSheetsClient() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      private_key: parsePrivateKey(process.env.GOOGLE_PRIVATE_KEY),
     },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   })
@@ -428,5 +500,197 @@ export async function updateSheetBookingStatus(bookingId: string, status: string
     })
   } catch (err) {
     console.error("[notifications] Failed to update sheet status:", err)
+  }
+}
+
+// ── Helper: ensure any tab exists with given headers ─────────────────────────
+
+async function ensureTab(tabName: string, headers: string[]) {
+  // Two separate try/catch so a failure in one doesn't hide the real error
+  let needsCreate = false
+
+  try {
+    const sheets = await getSheetsClient()
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${tabName}!A1:1`,
+    })
+    const existingHeaders = res.data.values?.[0] || []
+    // Write headers if missing OR if they don't match (schema changed)
+    const headersMatch = headers.every((h, i) => existingHeaders[i] === h) && existingHeaders.length === headers.length
+    if (!headersMatch) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `${tabName}!A1`,
+        valueInputOption: "RAW",
+        requestBody: { values: [headers] },
+      })
+    }
+    return // tab exists and has correct headers — done
+  } catch (err: unknown) {
+    const e = err as { code?: number; message?: string }
+    if (e?.code === 400 || (e?.message && e.message.includes("Unable to parse range"))) {
+      needsCreate = true
+    } else {
+      console.error(`[notifications] ensureTab check failed for "${tabName}":`, e?.message)
+      needsCreate = true
+    }
+  }
+
+  if (!needsCreate) return
+
+  try {
+    const sheets = await getSheetsClient()
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: { requests: [{ addSheet: { properties: { title: tabName } } }] },
+    })
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: `${tabName}!A1`,
+      valueInputOption: "RAW",
+      requestBody: { values: [headers] },
+    })
+  } catch (err: unknown) {
+    const e = err as { message?: string }
+    // If tab already exists (race condition), just continue — next append will work
+    if (!e?.message?.includes("already exists")) {
+      console.error(`[notifications] ensureTab create failed for "${tabName}":`, e?.message)
+      throw err // re-throw so the caller's catch logs it
+    }
+  }
+}
+
+// ── Signups sheet ─────────────────────────────────────────────────────────────
+
+const SIGNUP_HEADERS = ["Timestamp", "Role", "State", "Country", "Relationship", "PatientAgeGroup", "DiagnosisStatus"]
+
+export async function appendSignupToSheet(data: {
+  role: string; state: string; country: string
+  relationship?: string; patientAgeGroup?: string; diagnosisStatus?: string
+}) {
+  try {
+    const sheets = await getSheetsClient()
+    await ensureTab("Signups", SIGNUP_HEADERS)
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "Signups!A:G",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          new Date().toLocaleString("en-GB"),
+          data.role,
+          data.state,
+          data.country,
+          data.relationship || "",
+          data.patientAgeGroup || "",
+          data.diagnosisStatus || "",
+        ]],
+      },
+    })
+  } catch (err) {
+    console.error("[notifications] Failed to append signup to sheet:", err)
+  }
+}
+
+// ── Professionals sheet ───────────────────────────────────────────────────────
+
+const PROFESSIONAL_HEADERS = [
+  "Timestamp", "Name", "Email", "Specialization", "Location", "Experience (yrs)",
+  "Consultation Fee (₦)", "Languages", "Verification Status", "Credential Verified",
+]
+
+export async function appendProfessionalToSheet(data: {
+  name: string; email: string; specialization: string; location: string
+  experience: number; consultationFee: number; languages: string[]
+  verificationStatus: string; credentialVerified: boolean
+}) {
+  try {
+    const sheets = await getSheetsClient()
+    await ensureTab("Professionals", PROFESSIONAL_HEADERS)
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "Professionals!A:J",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          new Date().toLocaleString("en-GB"),
+          data.name,
+          data.email,
+          data.specialization,
+          data.location,
+          data.experience,
+          data.consultationFee,
+          data.languages.join(", "),
+          data.verificationStatus,
+          data.credentialVerified ? "Yes" : "No",
+        ]],
+      },
+    })
+  } catch (err) {
+    console.error("[notifications] Failed to append professional to sheet:", err)
+  }
+}
+
+// ── ResearchEvents sheet ──────────────────────────────────────────────────────
+
+const RESEARCH_HEADERS = [
+  "Recorded At", "Pseudo Caregiver ID", "Specialization", "State",
+  "Consultation Type", "Outcome", "Session Date", "Presenting Concern", "Confirmed Concern",
+]
+
+export async function appendResearchEventToSheet(data: {
+  pseudoCaregiverId: string; specialization: string; state: string
+  consultationType: string; outcome: string; sessionDate: Date
+  presentingConcern?: string; confirmedConcern?: string
+}) {
+  try {
+    const sheets = await getSheetsClient()
+    await ensureTab("ResearchEvents", RESEARCH_HEADERS)
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "ResearchEvents!A:I",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          new Date().toLocaleString("en-GB"),
+          data.pseudoCaregiverId,
+          data.specialization,
+          data.state,
+          data.consultationType,
+          data.outcome,
+          data.sessionDate.toLocaleDateString("en-GB"),
+          data.presentingConcern || "",
+          data.confirmedConcern || "",
+        ]],
+      },
+    })
+  } catch (err) {
+    console.error("[notifications] Failed to append research event to sheet:", err)
+  }
+}
+
+// ── Newsletter subscribers sheet ──────────────────────────────────────────────
+
+const NEWSLETTER_HEADERS = ["Timestamp", "Email", "Source"]
+
+export async function appendNewsletterToSheet(data: { email: string; source?: string }) {
+  try {
+    const sheets = await getSheetsClient()
+    await ensureTab("Newsletter", NEWSLETTER_HEADERS)
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "Newsletter!A:C",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [[
+          new Date().toLocaleString("en-GB"),
+          data.email,
+          data.source || "resources_page",
+        ]],
+      },
+    })
+  } catch (err) {
+    console.error("[notifications] Failed to append newsletter subscriber to sheet:", err)
   }
 }

@@ -41,12 +41,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }
 
       const body = await req.json()
-      // Prevent overwriting protected fields
+      // Prevent overwriting protected fields — credentialDocs/credentialVerified managed via /documents route
       delete body.userId
       delete body.isVerified
       delete body.verificationStatus
       delete body.averageRating
       delete body.reviewCount
+      delete body.credentialDocs
+      delete body.credentialVerified
 
       const updated = await Professional.findByIdAndUpdate(params.id, body, { new: true }).lean()
       return NextResponse.json({ professional: updated })

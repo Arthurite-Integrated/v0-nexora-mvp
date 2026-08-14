@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cognitoConfirmSignUp, cognitoSignIn, cognitoAddUserToGroup } from "@/lib/cognito"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/lib/models/User"
+import { appendSignupToSheet } from "@/lib/notifications"
 
 const isProduction = process.env.NODE_ENV === "production"
 const COOKIE_OPTIONS = {
@@ -13,7 +14,7 @@ const COOKIE_OPTIONS = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, code, password } = await req.json()
+    const { email, code, password, location, locationData, isSelfAdvocate } = await req.json()
 
     if (!email || !code || !password) {
       return NextResponse.json({ error: "Email, code, and password are required" }, { status: 400 })
@@ -30,9 +31,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Confirmed but sign-in failed — please sign in manually" }, { status: 500 })
     }
 
-    // Fetch MongoDB user to add them to the correct Cognito group
+    // Fetch MongoDB user + save location/isSelfAdvocate in the same request
     await connectDB()
-    const user = await User.findOne({ email: email.toLowerCase() }).lean() as { role?: string } | null
+    const updateFields: Record<string, unknown> = {}
+    if (location) updateFields.location = location
+    if (locationData?.country) updateFields.locationData = locationData
+
+    const user = Object.keys(updateFields).length > 0
+      ? await User.findOneAndUpdate(
+          { email: email.toLowerCase() },
+          { $set: updateFields },
+          { new: true }
+        ).lean() as { role?: string; location?: string; locationData?: { stateName?: string; countryName?: string }; isSelfAdvocate?: boolean } | null
+      : await User.findOne({ email: email.toLowerCase() }).lean() as { role?: string } | null
 
     if (user?.role) {
       const groupMap: Record<string, string> = {
@@ -45,6 +56,21 @@ export async function POST(req: NextRequest) {
       } catch {
         // non-fatal
       }
+    }
+
+    // Only write the signup sheet immediately for professionals and admins.
+    // Caregivers are written after they complete the care profile onboarding step,
+    // so the single row contains both location AND careProfile data.
+    const fullUser = user as {
+      role?: string; location?: string
+      locationData?: { stateName?: string; countryName?: string }
+    } | null
+    if (fullUser?.role !== "caregiver") {
+      await appendSignupToSheet({
+        role: fullUser?.role || "professional",
+        state: fullUser?.locationData?.stateName || fullUser?.location?.split(",")?.[1]?.trim() || "",
+        country: fullUser?.locationData?.countryName || fullUser?.location?.split(",")?.pop()?.trim() || "Nigeria",
+      }).catch(err => console.error("[confirm-signup] sheet error:", err))
     }
 
     const response = NextResponse.json({ message: "Email verified", user }, { status: 200 })
